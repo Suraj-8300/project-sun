@@ -148,8 +148,15 @@ async function initPortfolio() {
     }
 
     projects.forEach(project => {
-      const card = document.createElement('div');
+      const hasLink = !!project.live_url;
+      const card = document.createElement(hasLink ? 'a' : 'div');
       card.className = 'project-card';
+
+      if (hasLink) {
+        card.href = project.live_url;
+        card.target = '_blank';
+        card.rel = 'noopener noreferrer';
+      }
 
       const statusKey = project.status.toLowerCase().replace(/\s+/g, '-');
       const tags = (project.tech_tags || '')
@@ -158,10 +165,6 @@ async function initPortfolio() {
         .map(t => `<span class="tag">${t.trim()}</span>`)
         .join('');
 
-      const linkHtml = project.live_url
-        ? `<a href="${project.live_url}" class="project-link" target="_blank" rel="noopener noreferrer">View →</a>`
-        : '';
-
       card.innerHTML = `
         <div class="project-name">${project.name}</div>
         <div class="project-status">
@@ -169,7 +172,6 @@ async function initPortfolio() {
           ${project.status}
         </div>
         <div class="project-tags">${tags}</div>
-        ${linkHtml}
       `;
       container.appendChild(card);
     });
