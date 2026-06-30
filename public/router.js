@@ -209,6 +209,9 @@ async function initPersonal() {
         : '';
 
       const typeClass = (post.type || 'blog').toLowerCase();
+      const fullText = post.content || '';
+      const hasMedia = /!\[(image|video|audio)\]\((.*?)\)/.test(fullText);
+      const isLong = fullText.length > 180 || hasMedia;
 
       card.innerHTML = `
         <div class="post-meta">
@@ -216,14 +219,71 @@ async function initPersonal() {
           <span class="post-date">${date}</span>
         </div>
         <h3 class="post-title">${post.title}</h3>
-        <p class="post-content">${post.content}</p>
+        <div class="post-content-wrapper"></div>
       `;
+
+      const wrapper = card.querySelector('.post-content-wrapper');
+
+      if (isLong) {
+        card.classList.add('collapsible');
+        let expanded = false;
+
+        const updateView = () => {
+          if (expanded) {
+            wrapper.innerHTML = `
+              <div class="post-content">${renderPostContent(fullText)}</div>
+              <div class="post-expand-btn">Collapse ▴</div>
+            `;
+          } else {
+            wrapper.innerHTML = `
+              <div class="post-content">${getSnippet(fullText)}</div>
+              <div class="post-expand-btn">Read More ▾</div>
+            `;
+          }
+        };
+
+        updateView();
+
+        card.addEventListener('click', (e) => {
+          if (e.target.closest('video') || e.target.closest('audio') || e.target.closest('a')) {
+            return;
+          }
+          expanded = !expanded;
+          updateView();
+        });
+      } else {
+        wrapper.innerHTML = `
+          <div class="post-content">${renderPostContent(fullText)}</div>
+        `;
+      }
+
       container.appendChild(card);
     });
   } catch (error) {
     console.error('Error loading posts:', error);
     container.innerHTML = `<div class="empty-state">Error: ${error.message}</div>`;
   }
+}
+
+function renderPostContent(text) {
+  let html = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+  html = html.replace(/!\[image\]\((.*?)\)/g, '<img class="post-media" src="$1" loading="lazy" />');
+  html = html.replace(/!\[video\]\((.*?)\)/g, '<video class="post-media" src="$1" controls></video>');
+  html = html.replace(/!\[audio\]\((.*?)\)/g, '<audio class="post-audio" src="$1" controls></audio>');
+
+  return html.split('\n').join('<br>');
+}
+
+function getSnippet(text) {
+  let cleanText = text.replace(/!\[(image|video|audio)\]\((.*?)\)/g, '');
+  if (cleanText.length <= 180) {
+    return cleanText;
+  }
+  return cleanText.substring(0, 180).trim() + '...';
 }
 
 // =============================================
