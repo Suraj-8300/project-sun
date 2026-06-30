@@ -4,7 +4,7 @@
  */
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "project-sun",
+	"name": "suraj",
 	"main": "src/index.ts",
 	"compatibility_date": "2026-06-27",
 	"compatibility_flags": [
@@ -18,7 +18,14 @@
 	"observability": {
 		"enabled": true
 	},
-	"upload_source_maps": true
+	"upload_source_maps": true,
+	"d1_databases": [
+		{
+			"binding": "SUNDB",
+			"database_name": "project-sun-db",
+			"database_id": "51e8a835-e86c-45cc-a3c5-f67676c2b7e4"
+		}
+	]
 	/**
 	 * Smart Placement
 	 * https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement

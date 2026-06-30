@@ -3,30 +3,59 @@
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>Hello, World!</title>
+		<title>Project List</title>
+		<style>
+			body { font-family: sans-serif; max-width: 800px; margin: 40px auto; line-height: 1.6; }
+			h1 { color: #333; }
+			.project-item { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 8px; }
+			form { margin-bottom: 30px; background: #f4f4f4; padding: 20px; }
+		</style>
 	</head>
 	<body>
-		<h1 id="heading"></h1>
-		<p>This page comes from a static asset stored at `public/index.html` as configured in `wrangler.jsonc`.</p>
-		<button id="button" type="button">Fetch a random UUID</button>
-		<output id="random" for="button"></output>
+		<h1>My Projects</h1>
+		<ul id="project-list"></ul> </body>
+		<form id="admin-form">
+			<input type="text" id="name" placeholder="Project Name" required>
+			<input type="text" id="status" placeholder="Status" required>
+			<button type="submit">Add Project</button>
+		</form>
+
 		<script>
-			fetch('/message')
-				.then((resp) => resp.text())
-				.then((text) => {
-					const h1 = document.getElementById('heading');
-					h1.textContent = text;
+			// 1. LOAD PROJECTS ON STARTUP
+			async function loadProjects() {
+				const response = await fetch('/api/projects');
+				const data = await response.json();
+				const list = document.getElementById('project-list');
+				list.innerHTML = ''; // Clear current list
+
+				data.forEach(project => {
+					const li = document.createElement('li');
+					li.className = 'project-item';
+					li.innerHTML = `<strong>${project.name}</strong> - <em>${project.status}</em>`;
+					list.appendChild(li);
+				});
+			}
+
+			// 2. HANDLE FORM SUBMISSION
+			document.getElementById('admin-form').addEventListener('submit', async (e) => {
+				e.preventDefault();
+				const newProject = {
+					name: document.getElementById('name').value,
+					status: document.getElementById('status').value
+				};
+
+				await fetch('/api/projects', {
+					method: 'POST',
+					body: JSON.stringify(newProject),
+					headers: { 'Content-Type': 'application/json' }
 				});
 
-			const button = document.getElementById("button");
-			button.addEventListener("click", () => {
-				fetch('/random')
-					.then((resp) => resp.text())
-					.then((text) => {
-						const random = document.getElementById('random');
-						random.textContent = text;
-					});
+				document.getElementById('admin-form').reset(); // Clear form
+				loadProjects(); // Reload list without refreshing the whole page
 			});
+
+			// Run on startup
+			loadProjects();
 		</script>
 	</body>
 </html>
