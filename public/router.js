@@ -975,7 +975,47 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 
   window.addEventListener('mousemove', (e) => {
-    // Generate 1-2 sparks per movement event
-    spawnSparks(e.clientX, e.clientY, Math.floor(Math.random() * 2) + 1);
+    const x = e.clientX;
+    const y = e.clientY;
+
+    // Spawn 1-2 default cursor sparks
+    spawnSparks(x, y, Math.floor(Math.random() * 2) + 1);
+
+    // Bounding box grounding trigger
+    const targetElement = e.target.closest(
+      '.panel, .project-card, .post-card, .nav-link, .social-link, .skill-item, #admin-trigger'
+    );
+
+    if (targetElement && !targetElement.classList.contains('charged')) {
+      targetElement.classList.add('charged');
+      setTimeout(() => {
+        targetElement.classList.remove('charged');
+      }, 400);
+
+      // Generate localized border sparks to simulate a grounding lightning strike
+      const rect = targetElement.getBoundingClientRect();
+      const sparkCount = 3 + Math.floor(Math.random() * 3);
+
+      for (let i = 0; i < sparkCount; i++) {
+        const side = Math.floor(Math.random() * 4);
+        let sx = rect.left, sy = rect.top;
+
+        if (side === 0) { // Top edge
+          sx = rect.left + Math.random() * rect.width;
+          sy = rect.top;
+        } else if (side === 1) { // Right edge
+          sx = rect.right;
+          sy = rect.top + Math.random() * rect.height;
+        } else if (side === 2) { // Bottom edge
+          sx = rect.left + Math.random() * rect.width;
+          sy = rect.bottom;
+        } else { // Left edge
+          sx = rect.left;
+          sy = rect.top + Math.random() * rect.height;
+        }
+
+        spawnSparks(sx, sy, 1);
+      }
+    }
   });
 })();
