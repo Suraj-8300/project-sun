@@ -2,7 +2,8 @@
 const routes = {
   '/': initHub,
   '/portfolio': initPortfolio,
-  '/personal': initPersonal
+  '/personal': initPersonal,
+  '/instagram': () => {}
 };
 
 // Global navigation function
@@ -120,7 +121,9 @@ async function initHub() {
     const icons = {
       github: '🐙',
       linkedin: '💼',
+      leetcode: '💻',
       twitter: '🐦',
+      instagram: '📸',
       email: '✉️',
       portfolio: '✨',
       personal: '✍️',

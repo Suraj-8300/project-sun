@@ -94,6 +94,9 @@ export default {
       if (url.pathname === '/personal') {
         return env.ASSETS.fetch(new Request(new URL('/personal.html', request.url), request));
       }
+      if (url.pathname === '/instagram') {
+        return env.ASSETS.fetch(new Request(new URL('/instagram.html', request.url), request));
+      }
     }
 
     // --- STATIC ASSETS PASS-THROUGH ---

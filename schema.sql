@@ -22,8 +22,10 @@ CREATE TABLE links (
 
 -- Pre-fill links
 INSERT INTO links (platform, url, category) VALUES ('GitHub', 'https://github.com/Suraj-8300', 'social');
-INSERT INTO links (platform, url, category) VALUES ('LinkedIn', 'https://linkedin.com/in/suraj', 'social');
-INSERT INTO links (platform, url, category) VALUES ('Twitter', 'https://twitter.com', 'social');
+INSERT INTO links (platform, url, category) VALUES ('LinkedIn', 'https://linkedin.com/in/surajdhere8300', 'social');
+INSERT INTO links (platform, url, category) VALUES ('LeetCode', 'https://leetcode.com/u/495WgJjGMt/', 'social');
+INSERT INTO links (platform, url, category) VALUES ('Twitter', 'https://x.com/SURAJDHERE144', 'social');
+INSERT INTO links (platform, url, category) VALUES ('Instagram', '/instagram', 'social');
 INSERT INTO links (platform, url, category) VALUES ('Email', 'mailto:suraj@example.com', 'contact');
 INSERT INTO links (platform, url, category) VALUES ('Portfolio', '/portfolio', 'internal');
 INSERT INTO links (platform, url, category) VALUES ('Personal Blog', '/personal', 'internal');
