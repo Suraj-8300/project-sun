@@ -1,5 +1,5 @@
 // =============================================
-// Project Sun — Client-Side SPA Router
+// Project Sun — Client-Side SPA Router & Admin Panel
 // "Art Student Meets Core Dev"
 // =============================================
 
@@ -20,7 +20,7 @@ const ICONS = {
   instagram: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C8.74 0 8.333.015 7.053.072 5.775.132 4.905.333 4.14.63c-.789.306-1.459.717-2.126 1.384S.935 3.35.63 4.14C.333 4.905.131 5.775.072 7.053.012 8.333 0 8.74 0 12s.015 3.667.072 4.947c.06 1.277.261 2.148.558 2.913.306.788.717 1.459 1.384 2.126.667.666 1.336 1.079 2.126 1.384.766.296 1.636.499 2.913.558C8.333 23.988 8.74 24 12 24s3.667-.015 4.947-.072c1.277-.06 2.148-.262 2.913-.558.788-.306 1.459-.718 2.126-1.384.666-.667 1.079-1.335 1.384-2.126.296-.765.499-1.636.558-2.913.06-1.28.072-1.687.072-4.947s-.015-3.667-.072-4.947c-.06-1.277-.262-2.149-.558-2.913-.306-.789-.718-1.459-1.384-2.126C21.319 1.347 20.651.935 19.86.63c-.765-.297-1.636-.499-2.913-.558C15.667.012 15.26 0 12 0zm0 2.16c3.203 0 3.585.016 4.85.071 1.17.055 1.805.249 2.227.415.562.217.96.477 1.382.896.419.42.679.819.896 1.381.164.422.36 1.057.413 2.227.057 1.266.07 1.646.07 4.85s-.015 3.585-.074 4.85c-.061 1.17-.256 1.805-.421 2.227-.224.562-.479.96-.899 1.382-.419.419-.824.679-1.38.896-.42.164-1.065.36-2.235.413-1.274.057-1.649.07-4.859.07-3.211 0-3.586-.015-4.859-.074-1.171-.061-1.816-.256-2.236-.421-.569-.224-.96-.479-1.379-.899-.421-.419-.69-.824-.9-1.38-.165-.42-.359-1.065-.42-2.235-.045-1.26-.061-1.649-.061-4.844 0-3.196.016-3.586.061-4.861.061-1.17.255-1.814.42-2.234.21-.57.479-.96.9-1.381.419-.419.81-.689 1.379-.898.42-.166 1.051-.361 2.221-.421 1.275-.045 1.65-.06 4.859-.06l.045.03zm0 3.678a6.162 6.162 0 100 12.324 6.162 6.162 0 100-12.324zM12 16c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm7.846-10.405a1.441 1.441 0 11-2.882 0 1.441 1.441 0 012.882 0z"/></svg>',
 };
 
-// --- Core SPA Navigation ---
+// --- SPA Client Router ---
 async function navigate(path, pushState = true) {
   try {
     const appContent = document.getElementById('app-content');
@@ -33,27 +33,25 @@ async function navigate(path, pushState = true) {
     const parser = new DOMParser();
     const doc = parser.parseFromString(htmlText, 'text/html');
 
-    // Update document title
     document.title = doc.title;
 
-    // Replace main content
     const newContent = doc.getElementById('app-content');
     if (appContent && newContent) {
       appContent.innerHTML = newContent.innerHTML;
       appContent.style.opacity = '1';
     }
 
-    // Update nav active states
     updateActiveNav(path);
 
-    // Push history
     if (pushState) {
       history.pushState({ path }, '', path);
     }
 
-    // Run page initializer
     const initFunc = routes[path];
     if (initFunc) initFunc();
+
+    // Re-attach admin trigger listener if it changed
+    setupAdminTrigger();
   } catch (error) {
     console.error('Navigation failed:', error);
     if (pushState) window.location.href = path;
@@ -67,7 +65,7 @@ function updateActiveNav(path) {
   });
 }
 
-// Intercept internal link clicks
+// Intercept internal clicks
 document.addEventListener('click', (e) => {
   const link = e.target.closest('a');
   if (link) {
@@ -81,24 +79,15 @@ document.addEventListener('click', (e) => {
   }
 });
 
-// Browser back/forward
 window.addEventListener('popstate', () => {
   navigate(window.location.pathname, false);
 });
 
-// Init on first load
-window.addEventListener('DOMContentLoaded', () => {
-  const path = window.location.pathname;
-  updateActiveNav(path);
-  const initFunc = routes[path];
-  if (initFunc) initFunc();
-});
-
 // =============================================
-// Page Initializers
+// Page Content Initializers
 // =============================================
 
-// --- 1. Hub Page ---
+// --- Hub Page ---
 async function initHub() {
   const container = document.getElementById('socials-list');
   if (!container) return;
@@ -111,7 +100,6 @@ async function initHub() {
     const links = await response.json();
 
     container.innerHTML = '';
-
     const socialLinks = links.filter(l => l.category === 'social');
 
     if (socialLinks.length === 0) {
@@ -140,7 +128,7 @@ async function initHub() {
   }
 }
 
-// --- 2. Portfolio Page ---
+// --- Portfolio Page ---
 async function initPortfolio() {
   const container = document.getElementById('projects-grid');
   if (!container) return;
@@ -163,17 +151,13 @@ async function initPortfolio() {
       const card = document.createElement('div');
       card.className = 'project-card';
 
-      // Status class
       const statusKey = project.status.toLowerCase().replace(/\s+/g, '-');
-
-      // Parse tech tags
       const tags = (project.tech_tags || '')
         .split(',')
         .filter(t => t.trim())
         .map(t => `<span class="tag">${t.trim()}</span>`)
         .join('');
 
-      // Live URL
       const linkHtml = project.live_url
         ? `<a href="${project.live_url}" class="project-link" target="_blank" rel="noopener noreferrer">View →</a>`
         : '';
@@ -195,7 +179,7 @@ async function initPortfolio() {
   }
 }
 
-// --- 3. Personal Page ---
+// --- Personal Page ---
 async function initPersonal() {
   const container = document.getElementById('posts-feed');
   if (!container) return;
@@ -218,7 +202,6 @@ async function initPersonal() {
       const card = document.createElement('article');
       card.className = 'post-card';
 
-      // Format date
       const date = post.created_at
         ? new Date(post.created_at).toLocaleDateString('en-US', {
             year: 'numeric', month: 'short', day: 'numeric'
@@ -242,3 +225,575 @@ async function initPersonal() {
     container.innerHTML = `<div class="empty-state">Error: ${error.message}</div>`;
   }
 }
+
+// =============================================
+// Admin Control Panel Integration
+// =============================================
+
+let adminTriggerCount = 0;
+let adminTriggerTimeout = null;
+let currentAdminTab = 'projects';
+let editingItemId = null; // Stored if editing an item
+
+function getAuthHeader() {
+  const token = localStorage.getItem('admin_token');
+  return token ? { 'Authorization': `Bearer ${token}` } : {};
+}
+
+// Setup 5-click hidden trigger
+function setupAdminTrigger() {
+  const trigger = document.getElementById('admin-trigger');
+  if (!trigger) return;
+
+  // Prevent multiple bindings
+  trigger.replaceWith(trigger.cloneNode(true));
+  const newTrigger = document.getElementById('admin-trigger');
+
+  newTrigger.addEventListener('click', () => {
+    adminTriggerCount++;
+    clearTimeout(adminTriggerTimeout);
+    adminTriggerTimeout = setTimeout(() => {
+      adminTriggerCount = 0;
+    }, 2000);
+
+    if (adminTriggerCount >= 5) {
+      adminTriggerCount = 0;
+      showAdminLogin();
+    }
+  });
+}
+
+function showAdminLogin() {
+  if (localStorage.getItem('admin_token')) {
+    openAdminDrawer();
+    return;
+  }
+
+  // Create overlay if not present
+  let overlay = document.getElementById('admin-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'admin-overlay';
+    overlay.className = 'admin-overlay';
+    overlay.innerHTML = `
+      <div class="admin-login">
+        <h3>Admin Authentication</h3>
+        <input type="password" id="admin-pass-input" placeholder="Enter key..." />
+        <button id="admin-login-btn">Authenticate</button>
+        <div id="admin-login-error" class="error-msg hidden"></div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        overlay.classList.add('hidden');
+      }
+    });
+
+    document.getElementById('admin-login-btn').addEventListener('click', handleAdminLoginSubmit);
+    document.getElementById('admin-pass-input').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') handleAdminLoginSubmit();
+    });
+  }
+
+  overlay.classList.remove('hidden');
+  document.getElementById('admin-pass-input').value = '';
+  document.getElementById('admin-login-error').classList.add('hidden');
+  document.getElementById('admin-pass-input').focus();
+}
+
+async function handleAdminLoginSubmit() {
+  const passInput = document.getElementById('admin-pass-input');
+  const errorDiv = document.getElementById('admin-login-error');
+  const password = passInput.value.trim();
+
+  if (!password) return;
+
+  try {
+    const res = await fetch('/api/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password })
+    });
+
+    const data = await res.json();
+
+    if (res.ok && data.authenticated) {
+      localStorage.setItem('admin_token', password);
+      document.getElementById('admin-overlay').classList.add('hidden');
+      initAdminPanel();
+      openAdminDrawer();
+    } else {
+      errorDiv.textContent = data.error || 'Authentication failed';
+      errorDiv.classList.remove('hidden');
+    }
+  } catch (err) {
+    errorDiv.textContent = 'Server error during auth';
+    errorDiv.classList.remove('hidden');
+  }
+}
+
+// Initialise Admin panel elements (FAB + Drawer)
+function initAdminPanel() {
+  if (!localStorage.getItem('admin_token')) return;
+
+  // 1. FAB
+  let fab = document.getElementById('admin-fab');
+  if (!fab) {
+    fab = document.createElement('button');
+    fab.id = 'admin-fab';
+    fab.className = 'admin-fab';
+    fab.innerHTML = '⚙️';
+    document.body.appendChild(fab);
+    fab.addEventListener('click', toggleAdminDrawer);
+  }
+  fab.classList.remove('hidden');
+
+  // 2. Drawer
+  let drawer = document.getElementById('admin-drawer');
+  if (!drawer) {
+    drawer = document.createElement('div');
+    drawer.id = 'admin-drawer';
+    drawer.className = 'admin-drawer';
+    drawer.innerHTML = `
+      <div class="admin-header">
+        <h3>Admin Console</h3>
+        <button class="admin-close" id="admin-close-btn">&times;</button>
+      </div>
+      <div class="admin-tabs">
+        <button class="admin-tab active" data-tab="projects">Projects</button>
+        <button class="admin-tab" data-tab="posts">Posts</button>
+        <button class="admin-tab" data-tab="links">Links</button>
+      </div>
+      <div class="admin-content" id="admin-content-pane">
+        <!-- Rendered Dynamically -->
+      </div>
+    `;
+    document.body.appendChild(drawer);
+
+    document.getElementById('admin-close-btn').addEventListener('click', closeAdminDrawer);
+
+    drawer.querySelectorAll('.admin-tab').forEach(tab => {
+      tab.addEventListener('click', (e) => {
+        drawer.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        currentAdminTab = tab.dataset.tab;
+        editingItemId = null;
+        renderAdminTab();
+      });
+    });
+  }
+}
+
+function toggleAdminDrawer() {
+  const drawer = document.getElementById('admin-drawer');
+  if (drawer) {
+    drawer.classList.toggle('open');
+    if (drawer.classList.contains('open')) {
+      renderAdminTab();
+    }
+  }
+}
+
+function openAdminDrawer() {
+  initAdminPanel();
+  const drawer = document.getElementById('admin-drawer');
+  if (drawer) {
+    drawer.classList.add('open');
+    renderAdminTab();
+  }
+}
+
+function closeAdminDrawer() {
+  const drawer = document.getElementById('admin-drawer');
+  if (drawer) {
+    drawer.classList.remove('open');
+  }
+}
+
+// Render active tab inside drawer
+async function renderAdminTab() {
+  const pane = document.getElementById('admin-content-pane');
+  if (!pane) return;
+
+  pane.innerHTML = '<div class="loading-spinner"></div>';
+
+  try {
+    if (currentAdminTab === 'projects') {
+      const res = await fetch('/api/projects');
+      const projects = await res.json();
+      renderProjectsTab(pane, projects);
+    } else if (currentAdminTab === 'posts') {
+      const res = await fetch('/api/posts');
+      const posts = await res.json();
+      renderPostsTab(pane, posts);
+    } else if (currentAdminTab === 'links') {
+      const res = await fetch('/api/links');
+      const links = await res.json();
+      renderLinksTab(pane, links);
+    }
+  } catch (err) {
+    pane.innerHTML = `<div class="empty-state">Failed to load: ${err.message}</div>`;
+  }
+}
+
+// --- Tab Specific Renderers ---
+
+function renderProjectsTab(pane, items) {
+  pane.innerHTML = `
+    <form class="admin-form" id="project-form">
+      <h4 style="font-family:var(--font-mono); font-size:0.75rem; color:var(--accent); margin-bottom:12px;">
+        ${editingItemId ? 'Edit Project' : 'Create Project'}
+      </h4>
+      
+      <label>Project Name</label>
+      <input type="text" id="proj-name" required placeholder="e.g. V-NEURON" />
+
+      <label>Status</label>
+      <select id="proj-status">
+        <option value="Active">Active</option>
+        <option value="Shipped">Shipped</option>
+        <option value="In-Progress">In-Progress</option>
+      </select>
+
+      <label>Tech Tags (Comma separated)</label>
+      <input type="text" id="proj-tags" placeholder="e.g. React, Node.js" />
+
+      <label>Live/GitHub URL</label>
+      <input type="url" id="proj-url" placeholder="https://..." />
+
+      <div class="admin-form-actions">
+        <button type="submit" class="admin-btn primary">Save</button>
+        ${editingItemId ? '<button type="button" class="admin-btn cancel" id="proj-cancel">Cancel</button>' : ''}
+      </div>
+    </form>
+
+    <div class="admin-list">
+      <div class="section-label" style="margin-top:20px;">// existing projects</div>
+      ${items.map(item => `
+        <div class="admin-item">
+          <div class="admin-item-info">
+            <div class="admin-item-name">${item.name}</div>
+            <div class="admin-item-meta">${item.status} | ${item.tech_tags || 'No tags'}</div>
+          </div>
+          <div class="admin-item-actions">
+            <button class="admin-icon-btn edit-item" data-id="${item.id}">✏️</button>
+            <button class="admin-icon-btn delete delete-item" data-id="${item.id}">🗑️</button>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+
+    <button class="admin-logout-btn" id="admin-logout">Logout / Lock Panel</button>
+  `;
+
+  // Pre-fill if editing
+  if (editingItemId) {
+    const item = items.find(i => i.id == editingItemId);
+    if (item) {
+      document.getElementById('proj-name').value = item.name || '';
+      document.getElementById('proj-status').value = item.status || 'Active';
+      document.getElementById('proj-tags').value = item.tech_tags || '';
+      document.getElementById('proj-url').value = item.live_url || '';
+    }
+  }
+
+  // Event handlers
+  document.getElementById('project-form').addEventListener('submit', handleProjectSubmit);
+  if (editingItemId) {
+    document.getElementById('proj-cancel').addEventListener('click', () => {
+      editingItemId = null;
+      renderAdminTab();
+    });
+  }
+  attachListListeners('projects', items);
+}
+
+function renderPostsTab(pane, items) {
+  pane.innerHTML = `
+    <form class="admin-form" id="post-form">
+      <h4 style="font-family:var(--font-mono); font-size:0.75rem; color:var(--accent); margin-bottom:12px;">
+        ${editingItemId ? 'Edit Post' : 'Create Post'}
+      </h4>
+
+      <label>Post Title</label>
+      <input type="text" id="post-title" required placeholder="e.g. Systems Deep-Dive" />
+
+      <label>Type</label>
+      <select id="post-type">
+        <option value="blog">blog</option>
+        <option value="log">log</option>
+        <option value="photo">photo</option>
+      </select>
+
+      <label>Content</label>
+      <textarea id="post-content" rows="4" required placeholder="Write content..."></textarea>
+
+      <div class="admin-form-actions">
+        <button type="submit" class="admin-btn primary">Save</button>
+        ${editingItemId ? '<button type="button" class="admin-btn cancel" id="post-cancel">Cancel</button>' : ''}
+      </div>
+    </form>
+
+    <div class="admin-list">
+      <div class="section-label" style="margin-top:20px;">// existing posts</div>
+      ${items.map(item => `
+        <div class="admin-item">
+          <div class="admin-item-info">
+            <div class="admin-item-name">${item.title}</div>
+            <div class="admin-item-meta">${item.type} | ${new Date(item.created_at).toLocaleDateString()}</div>
+          </div>
+          <div class="admin-item-actions">
+            <button class="admin-icon-btn edit-item" data-id="${item.id}">✏️</button>
+            <button class="admin-icon-btn delete delete-item" data-id="${item.id}">🗑️</button>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+
+    <button class="admin-logout-btn" id="admin-logout">Logout / Lock Panel</button>
+  `;
+
+  if (editingItemId) {
+    const item = items.find(i => i.id == editingItemId);
+    if (item) {
+      document.getElementById('post-title').value = item.title || '';
+      document.getElementById('post-type').value = item.type || 'blog';
+      document.getElementById('post-content').value = item.content || '';
+    }
+  }
+
+  document.getElementById('post-form').addEventListener('submit', handlePostSubmit);
+  if (editingItemId) {
+    document.getElementById('post-cancel').addEventListener('click', () => {
+      editingItemId = null;
+      renderAdminTab();
+    });
+  }
+  attachListListeners('posts', items);
+}
+
+function renderLinksTab(pane, items) {
+  pane.innerHTML = `
+    <form class="admin-form" id="link-form">
+      <h4 style="font-family:var(--font-mono); font-size:0.75rem; color:var(--accent); margin-bottom:12px;">
+        ${editingItemId ? 'Edit Link' : 'Create Link'}
+      </h4>
+
+      <label>Platform Name</label>
+      <input type="text" id="link-platform" required placeholder="e.g. GitHub" />
+
+      <label>URL</label>
+      <input type="text" id="link-url" required placeholder="e.g. https://github.com/..." />
+
+      <label>Category</label>
+      <select id="link-category">
+        <option value="social">social</option>
+        <option value="internal">internal</option>
+      </select>
+
+      <div class="admin-form-actions">
+        <button type="submit" class="admin-btn primary">Save</button>
+        ${editingItemId ? '<button type="button" class="admin-btn cancel" id="link-cancel">Cancel</button>' : ''}
+      </div>
+    </form>
+
+    <div class="admin-list">
+      <div class="section-label" style="margin-top:20px;">// existing links</div>
+      ${items.map(item => `
+        <div class="admin-item">
+          <div class="admin-item-info">
+            <div class="admin-item-name">${item.platform}</div>
+            <div class="admin-item-meta">${item.category} | ${item.url}</div>
+          </div>
+          <div class="admin-item-actions">
+            <button class="admin-icon-btn edit-item" data-id="${item.id}">✏️</button>
+            <button class="admin-icon-btn delete delete-item" data-id="${item.id}">🗑️</button>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+
+    <button class="admin-logout-btn" id="admin-logout">Logout / Lock Panel</button>
+  `;
+
+  if (editingItemId) {
+    const item = items.find(i => i.id == editingItemId);
+    if (item) {
+      document.getElementById('link-platform').value = item.platform || '';
+      document.getElementById('link-url').value = item.url || '';
+      document.getElementById('link-category').value = item.category || 'social';
+    }
+  }
+
+  document.getElementById('link-form').addEventListener('submit', handleLinkSubmit);
+  if (editingItemId) {
+    document.getElementById('link-cancel').addEventListener('click', () => {
+      editingItemId = null;
+      renderAdminTab();
+    });
+  }
+  attachListListeners('links', items);
+}
+
+// Attach listeners to list buttons (edit/delete/logout)
+function attachListListeners(type, items) {
+  document.querySelectorAll('.edit-item').forEach(btn => {
+    btn.addEventListener('click', () => {
+      editingItemId = btn.dataset.id;
+      renderAdminTab();
+    });
+  });
+
+  document.querySelectorAll('.delete-item').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.id;
+      if (!confirm('Are you sure you want to delete this item?')) return;
+
+      try {
+        const res = await fetch(`/api/${type}/${id}`, {
+          method: 'DELETE',
+          headers: getAuthHeader()
+        });
+
+        if (res.ok) {
+          editingItemId = null;
+          renderAdminTab();
+          refreshMainSiteContent();
+        } else {
+          alert('Failed to delete item.');
+        }
+      } catch (err) {
+        alert('Server error.');
+      }
+    });
+  });
+
+  document.getElementById('admin-logout').addEventListener('click', () => {
+    localStorage.removeItem('admin_token');
+    closeAdminDrawer();
+    const fab = document.getElementById('admin-fab');
+    if (fab) fab.classList.add('hidden');
+  });
+}
+
+// --- Submit Handlers ---
+
+async function handleProjectSubmit(e) {
+  e.preventDefault();
+  const body = {
+    name: document.getElementById('proj-name').value.trim(),
+    status: document.getElementById('proj-status').value,
+    tech_tags: document.getElementById('proj-tags').value.trim(),
+    live_url: document.getElementById('proj-url').value.trim()
+  };
+
+  const url = editingItemId ? `/api/projects/${editingItemId}` : '/api/projects';
+  const method = editingItemId ? 'PUT' : 'POST';
+
+  try {
+    const res = await fetch(url, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeader()
+      },
+      body: JSON.stringify(body)
+    });
+
+    if (res.ok) {
+      editingItemId = null;
+      renderAdminTab();
+      refreshMainSiteContent();
+    } else {
+      const errData = await res.json();
+      alert(`Error saving: ${errData.error || 'Server rejected request'}`);
+    }
+  } catch (err) {
+    alert('Network error saving project.');
+  }
+}
+
+async function handlePostSubmit(e) {
+  e.preventDefault();
+  const body = {
+    title: document.getElementById('post-title').value.trim(),
+    type: document.getElementById('post-type').value,
+    content: document.getElementById('post-content').value.trim()
+  };
+
+  const url = editingItemId ? `/api/posts/${editingItemId}` : '/api/posts';
+  const method = editingItemId ? 'PUT' : 'POST';
+
+  try {
+    const res = await fetch(url, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeader()
+      },
+      body: JSON.stringify(body)
+    });
+
+    if (res.ok) {
+      editingItemId = null;
+      renderAdminTab();
+      refreshMainSiteContent();
+    } else {
+      const errData = await res.json();
+      alert(`Error saving: ${errData.error || 'Server rejected request'}`);
+    }
+  } catch (err) {
+    alert('Network error saving post.');
+  }
+}
+
+async function handleLinkSubmit(e) {
+  e.preventDefault();
+  const body = {
+    platform: document.getElementById('link-platform').value.trim(),
+    url: document.getElementById('link-url').value.trim(),
+    category: document.getElementById('link-category').value
+  };
+
+  const url = editingItemId ? `/api/links/${editingItemId}` : '/api/links';
+  const method = editingItemId ? 'PUT' : 'POST';
+
+  try {
+    const res = await fetch(url, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeader()
+      },
+      body: JSON.stringify(body)
+    });
+
+    if (res.ok) {
+      editingItemId = null;
+      renderAdminTab();
+      refreshMainSiteContent();
+    } else {
+      const errData = await res.json();
+      alert(`Error saving: ${errData.error || 'Server rejected request'}`);
+    }
+  } catch (err) {
+    alert('Network error saving link.');
+  }
+}
+
+// Refresh the background page content immediately if present
+function refreshMainSiteContent() {
+  const path = window.location.pathname;
+  const initFunc = routes[path];
+  if (initFunc) initFunc();
+}
+
+// DOM Setup
+window.addEventListener('DOMContentLoaded', () => {
+  setupAdminTrigger();
+  if (localStorage.getItem('admin_token')) {
+    initAdminPanel();
+  }
+});
