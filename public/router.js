@@ -271,15 +271,45 @@ function renderPostContent(text) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
 
+  // 1. Markdown media tags
   html = html.replace(/!\[image\]\((.*?)\)/g, '<img class="post-media" src="$1" loading="lazy" />');
   html = html.replace(/!\[video\]\((.*?)\)/g, '<video class="post-media" src="$1" controls></video>');
   html = html.replace(/!\[audio\]\((.*?)\)/g, '<audio class="post-audio" src="$1" controls></audio>');
 
-  return html.split('\n').join('<br>');
+  // 2. Direct media URL lines auto-parser
+  const lines = html.split('\n');
+  const parsedLines = lines.map(line => {
+    const trimmed = line.trim();
+    if (/^https?:\/\/[^\s]+$/i.test(trimmed)) {
+      if (/\.(jpeg|jpg|png|gif|webp|svg)(\?.*)?$/i.test(trimmed)) {
+        return `<img class="post-media" src="${trimmed}" loading="lazy" />`;
+      }
+      if (/\.(mp4|webm|ogg)(\?.*)?$/i.test(trimmed)) {
+        return `<video class="post-media" src="${trimmed}" controls></video>`;
+      }
+      if (/\.(mp3|wav|aac|m4a|ogg)(\?.*)?$/i.test(trimmed)) {
+        return `<audio class="post-audio" src="${trimmed}" controls></audio>`;
+      }
+    }
+    return line;
+  });
+
+  return parsedLines.join('<br>');
 }
 
 function getSnippet(text) {
   let cleanText = text.replace(/!\[(image|video|audio)\]\((.*?)\)/g, '');
+  const lines = cleanText.split('\n');
+  const filteredLines = lines.filter(line => {
+    const trimmed = line.trim();
+    if (/^https?:\/\/[^\s]+$/i.test(trimmed)) {
+      if (/\.(jpeg|jpg|png|gif|webp|svg|mp4|webm|mp3|wav|aac|m4a|ogg)(\?.*)?$/i.test(trimmed)) {
+        return false;
+      }
+    }
+    return true;
+  });
+  cleanText = filteredLines.join('\n');
   if (cleanText.length <= 180) {
     return cleanText;
   }
@@ -588,6 +618,11 @@ function renderPostsTab(pane, items) {
       </select>
 
       <label>Content</label>
+      <div class="media-toolbar" style="display: flex; gap: 8px; margin-bottom: 8px;">
+        <button type="button" class="toolbar-btn add-media-btn" data-type="image" style="background:none; border:1px dashed var(--border); border-radius:4px; padding:4px 8px; font-family:var(--font-mono); font-size:0.68rem; color:var(--text-muted); cursor:pointer; transition:var(--transition);">📷 Image</button>
+        <button type="button" class="toolbar-btn add-media-btn" data-type="video" style="background:none; border:1px dashed var(--border); border-radius:4px; padding:4px 8px; font-family:var(--font-mono); font-size:0.68rem; color:var(--text-muted); cursor:pointer; transition:var(--transition);">🎥 Video</button>
+        <button type="button" class="toolbar-btn add-media-btn" data-type="audio" style="background:none; border:1px dashed var(--border); border-radius:4px; padding:4px 8px; font-family:var(--font-mono); font-size:0.68rem; color:var(--text-muted); cursor:pointer; transition:var(--transition);">🎵 Audio</button>
+      </div>
       <textarea id="post-content" rows="4" required placeholder="Write content..."></textarea>
 
       <div class="admin-form-actions">
@@ -623,6 +658,23 @@ function renderPostsTab(pane, items) {
       document.getElementById('post-content').value = item.content || '';
     }
   }
+
+  // Attach toolbar listeners
+  pane.querySelectorAll('.add-media-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const type = btn.getAttribute('data-type');
+      const url = prompt(`Enter ${type} URL:`);
+      if (!url) return;
+      const textarea = document.getElementById('post-content');
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const text = textarea.value;
+      const tag = `\n![${type}](${url})\n`;
+      textarea.value = text.substring(0, start) + tag + text.substring(end);
+      textarea.focus();
+      textarea.selectionStart = textarea.selectionEnd = start + tag.length;
+    });
+  });
 
   document.getElementById('post-form').addEventListener('submit', handlePostSubmit);
   if (editingItemId) {
