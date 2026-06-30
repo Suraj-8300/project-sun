@@ -994,10 +994,20 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 
   let animationFrameId = null;
+  let mouseX = 0;
+  let mouseY = 0;
+  let mouseActive = false;
 
   function loop() {
     ctx.clearRect(0, 0, width, height);
     ctx.shadowBlur = 0;
+
+    // Steady, slow electric leak when the mouse is at rest
+    if (mouseActive) {
+      if (Math.random() < 0.25) { // 25% chance per frame to spark at rest
+        spawnSparks(mouseX, mouseY, 1);
+      }
+    }
 
     for (let i = particles.length - 1; i >= 0; i--) {
       const p = particles[i];
@@ -1008,7 +1018,7 @@ window.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    if (particles.length > 0) {
+    if (particles.length > 0 || mouseActive) {
       animationFrameId = requestAnimationFrame(loop);
     } else {
       animationFrameId = null;
@@ -1027,11 +1037,16 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 
   window.addEventListener('mousemove', (e) => {
-    const x = e.clientX;
-    const y = e.clientY;
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+    mouseActive = true;
 
-    // Spawn 1-2 default cursor sparks
-    spawnSparks(x, y, Math.floor(Math.random() * 2) + 1);
+    if (!animationFrameId) {
+      loop();
+    }
+
+    // Spawn 1-2 extra sparks on movement
+    spawnSparks(mouseX, mouseY, Math.floor(Math.random() * 2) + 1);
 
     // Bounding box grounding trigger
     const targetElement = e.target.closest(
@@ -1069,5 +1084,16 @@ window.addEventListener('DOMContentLoaded', () => {
         spawnSparks(sx, sy, 1);
       }
     }
+  });
+
+  window.addEventListener('mouseenter', () => {
+    mouseActive = true;
+    if (!animationFrameId) {
+      loop();
+    }
+  });
+
+  window.addEventListener('mouseleave', () => {
+    mouseActive = false;
   });
 })();
