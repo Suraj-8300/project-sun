@@ -908,6 +908,12 @@ window.addEventListener('DOMContentLoaded', () => {
   if (localStorage.getItem('admin_token')) {
     initAdminPanel();
   }
+  
+  const path = window.location.pathname;
+  const initFunc = routes[path];
+  if (initFunc) {
+    initFunc();
+  }
 });
 
 // --- Interactive Electric Spark Mouse Trail ---
