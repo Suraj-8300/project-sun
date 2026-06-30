@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <style>
+      .bg { fill: #07070d; }
+      .grid { stroke: rgba(129, 140, 248, 0.15); stroke-width: 0.5; }
+      .accent { fill: none; stroke: #818cf8; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0px 0px 3px rgba(129, 140, 248, 0.8)); }
+      .dot { fill: #34d399; filter: drop-shadow(0px 0px 3px rgba(52, 211, 153, 0.8)); }
+    </style>
+  </defs>
+  <rect width="32" height="32" rx="6" class="bg"/>
+  <line x1="8" y1="0" x2="8" y2="32" class="grid"/>
+  <line x1="16" y1="0" x2="16" y2="32" class="grid"/>
+  <line x1="24" y1="0" x2="24" y2="32" class="grid"/>
+  <line x1="0" y1="8" x2="32" y2="8" class="grid"/>
+  <line x1="0" y1="16" x2="32" y2="16" class="grid"/>
+  <line x1="0" y1="24" x2="32" y2="24" class="grid"/>
+  <path d="M10 11L15 16L10 21" class="accent"/>
+  <line x1="17" y1="21" x2="23" y2="21" class="accent"/>
+  <circle cx="26" cy="8" r="1.5" class="dot"/>
+</svg>
