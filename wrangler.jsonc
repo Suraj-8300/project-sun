@@ -4,7 +4,7 @@
  */
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "suraj",
+	"name": "project-sun",
 	"main": "src/index.ts",
 	"compatibility_date": "2026-06-27",
 	"compatibility_flags": [
