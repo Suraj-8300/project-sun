@@ -857,3 +857,125 @@ window.addEventListener('DOMContentLoaded', () => {
     initAdminPanel();
   }
 });
+
+// --- Interactive Electric Spark Mouse Trail ---
+(() => {
+  const canvas = document.createElement('canvas');
+  canvas.id = 'electric-canvas';
+  Object.assign(canvas.style, {
+    position: 'fixed',
+    top: '0',
+    left: '0',
+    width: '100vw',
+    height: '100vh',
+    pointerEvents: 'none',
+    zIndex: '99999'
+  });
+  document.body.appendChild(canvas);
+
+  const ctx = canvas.getContext('2d');
+  let width = canvas.width = window.innerWidth;
+  let height = canvas.height = window.innerHeight;
+
+  window.addEventListener('resize', () => {
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+  });
+
+  const particles = [];
+  const maxParticles = 65;
+
+  class Spark {
+    constructor(x, y) {
+      this.x = x;
+      this.y = y;
+      // Slanted explosion direction
+      this.vx = (Math.random() - 0.5) * 7;
+      this.vy = (Math.random() - 0.5) * 7 - 1.5;
+      this.life = 0;
+      this.maxLife = 20 + Math.random() * 20;
+      // High energy color palette matching the neon brutalist accent scheme
+      const colors = ['#818cf8', '#34d399', '#f472b6', '#a78bfa', '#ffffff'];
+      this.color = colors[Math.floor(Math.random() * colors.length)];
+      this.history = [{ x: this.x, y: this.y }];
+    }
+
+    update() {
+      this.life++;
+      
+      // Jagged bolt wiggle
+      this.vx += (Math.random() - 0.5) * 3;
+      this.vy += (Math.random() - 0.5) * 3;
+      
+      // Decay speed
+      this.vx *= 0.94;
+      this.vy *= 0.94;
+
+      this.x += this.vx;
+      this.y += this.vy;
+
+      this.history.push({ x: this.x, y: this.y });
+      if (this.history.length > 5) {
+        this.history.shift();
+      }
+    }
+
+    draw() {
+      if (this.history.length < 2) return;
+      ctx.beginPath();
+      ctx.moveTo(this.history[0].x, this.history[0].y);
+
+      for (let i = 1; i < this.history.length; i++) {
+        const offsetLimit = 3 * (1 - this.life / this.maxLife);
+        const ox = (Math.random() - 0.5) * offsetLimit;
+        const oy = (Math.random() - 0.5) * offsetLimit;
+        ctx.lineTo(this.history[i].x + ox, this.history[i].y + oy);
+      }
+
+      const opacity = 1 - this.life / this.maxLife;
+      ctx.strokeStyle = this.color;
+      ctx.lineWidth = (1 + Math.random() * 1.5) * opacity;
+      ctx.shadowBlur = 8 * opacity;
+      ctx.shadowColor = this.color;
+      ctx.stroke();
+    }
+  }
+
+  let animationFrameId = null;
+
+  function loop() {
+    ctx.clearRect(0, 0, width, height);
+    ctx.shadowBlur = 0;
+
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.update();
+      p.draw();
+      if (p.life >= p.maxLife) {
+        particles.splice(i, 1);
+      }
+    }
+
+    if (particles.length > 0) {
+      animationFrameId = requestAnimationFrame(loop);
+    } else {
+      animationFrameId = null;
+    }
+  }
+
+  function spawnSparks(x, y, count) {
+    for (let i = 0; i < count; i++) {
+      if (particles.length < maxParticles) {
+        particles.push(new Spark(x, y));
+      }
+    }
+    if (!animationFrameId) {
+      loop();
+    }
+  }
+
+  window.addEventListener('mousemove', (e) => {
+    // Generate 1-2 sparks per movement event
+    spawnSparks(e.clientX, e.clientY, Math.floor(Math.random() * 2) + 1);
+  });
+})();
