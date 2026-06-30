@@ -3,44 +3,78 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Portfolio | Suraj</title>
+    <meta name="description" content="Suraj's Portfolio — Projects, technical skills, and career timeline." />
+    <title>Portfolio — Suraj</title>
     <link rel="stylesheet" href="/style.css" />
   </head>
   <body>
     <header>
       <nav class="nav-bar">
         <a href="/" class="nav-link">Hub</a>
-        <a href="/portfolio" class="nav-link">Portfolio</a>
+        <a href="/portfolio" class="nav-link active">Portfolio</a>
         <a href="/personal" class="nav-link">Personal</a>
+        <div class="nav-spacer"></div>
+        <span class="nav-url">suraj.shinelikesun.workers.dev/portfolio</span>
       </nav>
     </header>
 
     <main id="app-content">
-      <div class="section">
-        <h2 class="sub-section-title">🚀 Projects</h2>
-        <div id="projects-grid" class="projects-list">
-          <!-- Projects from D1 are rendered here -->
-        </div>
+      <div class="page-header">
+        <h1>The Portfolio.</h1>
+        <p>Projects shipped, skills honed, and the timeline so far.</p>
+      </div>
 
-        <div class="form-card">
-          <h3 class="form-title">Add a Project</h3>
-          <form id="project-form">
-            <div class="form-group">
-              <label class="form-label" for="name">Project Name</label>
-              <input type="text" id="name" class="form-input" placeholder="e.g. CodeAudit AI" required />
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="status">Status</label>
-              <input type="text" id="status" class="form-input" placeholder="e.g. Active or In-Progress" required />
-            </div>
-            <button type="submit" class="form-submit-btn">Add Project</button>
-          </form>
-        </div>
+      <!-- Projects -->
+      <div class="section-label">// projects</div>
+      <div class="projects-grid" id="projects-grid">
+        <div class="loading-spinner"></div>
+      </div>
 
-        <div class="section" style="margin-top: 40px;">
-          <h2 class="sub-section-title">📂 Case Studies & Work Posts</h2>
-          <div id="work-posts-list" class="posts-feed">
-            <!-- Work posts from D1 are rendered here -->
+      <!-- Skills -->
+      <div class="skills-section">
+        <div class="section-label">// skills & tools</div>
+        <div class="skills-grid">
+          <span class="skill-item">TypeScript</span>
+          <span class="skill-item">Python</span>
+          <span class="skill-item">Rust</span>
+          <span class="skill-item">JavaScript</span>
+          <span class="skill-item">SQL</span>
+          <span class="skill-item">React</span>
+          <span class="skill-item">Node.js</span>
+          <span class="skill-item">Cloudflare Workers</span>
+          <span class="skill-item">D1 / SQLite</span>
+          <span class="skill-item">Docker</span>
+          <span class="skill-item">Git</span>
+          <span class="skill-item">Linux</span>
+          <span class="skill-item">LLMs & AI</span>
+          <span class="skill-item">Edge Computing</span>
+          <span class="skill-item">WebAssembly</span>
+        </div>
+      </div>
+
+      <!-- Career Timeline -->
+      <div class="timeline-section">
+        <div class="section-label">// career timeline</div>
+        <div class="timeline">
+          <div class="timeline-item">
+            <div class="timeline-year">2026 — Present</div>
+            <div class="timeline-title">Building on the Edge</div>
+            <div class="timeline-desc">Developing globally distributed applications on Cloudflare Workers. Exploring serverless architecture, D1 databases, and edge-first design patterns.</div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-year">2025</div>
+            <div class="timeline-title">V-NEURON — Final Year Project</div>
+            <div class="timeline-desc">Built a multimodal transit routing platform for Nagpur using React, Node.js, Leaflet, and real-time traffic data. Shipped as the capstone engineering project.</div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-year">2024</div>
+            <div class="timeline-title">CodeAudit AI & Systems Deep-Dive</div>
+            <div class="timeline-desc">Developed an AI-powered static analysis tool leveraging LLMs and AST parsing. Began exploring Rust, assembly, and low-level systems programming.</div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-year">2022</div>
+            <div class="timeline-title">Started Engineering</div>
+            <div class="timeline-desc">Began the journey in Computer Science. Early projects in Python, web development, and algorithmic problem-solving on LeetCode.</div>
           </div>
         </div>
       </div>

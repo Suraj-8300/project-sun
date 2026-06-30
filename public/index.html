@@ -3,30 +3,65 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Suraj | Personal Hub</title>
+    <meta name="description" content="Suraj's Digital Hub — Software Engineer building performant systems on the edge. Projects, blog, and creative work." />
+    <title>Suraj — Digital Hub</title>
     <link rel="stylesheet" href="/style.css" />
   </head>
   <body>
     <header>
       <nav class="nav-bar">
-        <a href="/" class="nav-link">Hub</a>
+        <a href="/" class="nav-link active">Hub</a>
         <a href="/portfolio" class="nav-link">Portfolio</a>
         <a href="/personal" class="nav-link">Personal</a>
+        <div class="nav-spacer"></div>
+        <span class="nav-url">suraj.shinelikesun.workers.dev</span>
       </nav>
     </header>
 
     <main id="app-content">
-      <div class="section">
-        <div class="profile">
-          <div class="profile-avatar">S</div>
-          <h1 class="profile-name">Suraj</h1>
-          <p class="profile-bio">Software Engineer & Systems Enthusiast. Building performant applications on the edge.</p>
-        </div>
+      <!-- Hero Section -->
+      <section class="hero">
+        <span class="hero-label">// welcome</span>
+        <h1 class="hero-title">
+          I build things<br />
+          on the <span class="accent-blue">edge</span>,<br />
+          with <span class="accent-violet">intent</span>.
+        </h1>
+        <p class="hero-subtitle">
+          Software engineer & systems enthusiast. Building performant, globally distributed applications — one Worker at a time.
+        </p>
+        <span class="hero-url">→ suraj.shinelikesun.workers.dev</span>
+      </section>
 
-        <div class="links-container" id="links-list">
-          <!-- Links from D1 are rendered here -->
+      <!-- The Big Three -->
+      <section class="big-three" id="big-three-nav">
+        <a href="/portfolio" class="panel">
+          <div class="panel-number">01</div>
+          <div class="panel-title">Portfolio</div>
+          <div class="panel-desc">Projects, skills, and the career timeline. The professional workspace.</div>
+          <div class="panel-arrow">→</div>
+        </a>
+        <a href="/personal" class="panel">
+          <div class="panel-number">02</div>
+          <div class="panel-title">Personal</div>
+          <div class="panel-desc">Blog entries, daily logs, and thoughts. The creative studio.</div>
+          <div class="panel-arrow">→</div>
+        </a>
+        <a href="#socials" class="panel" id="socials-toggle">
+          <div class="panel-number">03</div>
+          <div class="panel-title">Socials</div>
+          <div class="panel-desc">GitHub, LinkedIn, LeetCode, and the rest. All my connectors.</div>
+          <div class="panel-arrow">↓</div>
+        </a>
+      </section>
+
+      <!-- Socials Strip -->
+      <section class="socials-section" id="socials">
+        <div class="section-label">// connectors</div>
+        <div class="socials-grid" id="socials-list">
+          <!-- Populated dynamically from D1 -->
         </div>
-      </div>
+      </section>
     </main>
 
     <script src="/router.js"></script>
