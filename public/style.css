@@ -364,7 +364,12 @@ main {
   transition: var(--transition);
 }
 
-.skill-item:hover { border-color: var(--accent); color: var(--text); }
+.skill-item:hover {
+  border-color: var(--accent);
+  color: var(--text);
+  box-shadow: 0 0 10px rgba(129,140,248,0.2);
+  transform: translateY(-1px);
+}
 
 /* --- Timeline --- */
 .timeline-section { margin-bottom: 48px; }
@@ -424,7 +429,9 @@ main {
 }
 
 .post-card:hover {
-  border-color: var(--border-hover);
+  border-color: var(--accent);
+  box-shadow: 0 0 16px rgba(129,140,248,0.25);
+  transform: translateY(-2px);
   background: rgba(255,255,255,0.04);
 }
 
