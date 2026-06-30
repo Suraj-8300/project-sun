@@ -418,3 +418,70 @@ main {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* Instagram Deactivated Page Styles */
+.deactivated-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 40px 30px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 24px;
+  max-width: 420px;
+  margin: 60px auto;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+  animation: fadeIn 0.5s ease-out;
+}
+
+.instagram-glow {
+  width: 80px;
+  height: 80px;
+  border-radius: 22px;
+  background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285aeb 90%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  margin-bottom: 24px;
+  box-shadow: 0 10px 30px rgba(214, 36, 159, 0.4);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+}
+
+.deactivated-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+  letter-spacing: -0.01em;
+  color: var(--text-main);
+}
+
+.deactivated-desc {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin-bottom: 30px;
+}
+
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--card-border);
+  border-radius: 30px;
+  color: var(--text-main);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: var(--transition);
+}
+
+.back-btn:hover {
+  background: var(--accent-gradient);
+  border-color: transparent;
+  box-shadow: 0 5px 15px var(--accent-glow);
+  transform: translateY(-2px);
+}
