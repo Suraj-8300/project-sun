@@ -39,3 +39,16 @@ If the application uses Durable Objects or Workflows, refer to the relevant best
 
 - Durable Objects: https://developers.cloudflare.com/durable-objects/best-practices/rules-of-durable-objects/
 - Workflows: https://developers.cloudflare.com/workflows/build/rules-of-workflows/
+
+
+# User defined AI Instructions
+
+Architecture: Cloudflare Workers (Serverless) + D1 SQL Database.
+
+Hosting: Cloudflare Pages/Workers (domain: suraj.shinelikesun.workers.dev).
+
+Version Control: GitHub (Suraj-8300/project-sun).
+
+Data Structure: Relational Database (SQL).
+
+Current State: Fully deployed backend with a /api/projects endpoint, D1 database binding (SUNDB), and basic frontend form.
