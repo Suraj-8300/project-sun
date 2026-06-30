@@ -86,16 +86,16 @@ export default {
     // Serve HTML assets on direct page hits
     if (request.method === 'GET') {
       if (url.pathname === '/') {
-        return env.ASSETS.fetch(new Request(new URL('/index.html', request.url), request));
+        return env.ASSETS.fetch(new URL('/index.html', request.url).toString());
       }
       if (url.pathname === '/portfolio') {
-        return env.ASSETS.fetch(new Request(new URL('/portfolio.html', request.url), request));
+        return env.ASSETS.fetch(new URL('/portfolio.html', request.url).toString());
       }
       if (url.pathname === '/personal') {
-        return env.ASSETS.fetch(new Request(new URL('/personal.html', request.url), request));
+        return env.ASSETS.fetch(new URL('/personal.html', request.url).toString());
       }
       if (url.pathname === '/instagram') {
-        return env.ASSETS.fetch(new Request(new URL('/instagram.html', request.url), request));
+        return env.ASSETS.fetch(new URL('/instagram.html', request.url).toString());
       }
     }
 
