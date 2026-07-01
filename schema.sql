@@ -36,6 +36,7 @@ INSERT INTO links (platform, url, category) VALUES
   ('LeetCode', 'https://leetcode.com/u/495WgJjGMt/', 'social'),
   ('X', 'https://x.com/SURAJDHERE144', 'social'),
   ('Instagram', '/instagram', 'social'),
+  ('Gmail', 'mailto:surajdhere8300@gmail.com', 'social'),
   ('Portfolio', '/portfolio', 'internal'),
   ('Personal', '/personal', 'internal');
 
