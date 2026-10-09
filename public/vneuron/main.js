@@ -2,8 +2,7 @@
 
 // Dynamic V-NEURON Backend URL Setup
 const DEFAULT_API_BASE_URL = 'https://surajdhere-v-neuron-x.hf.space';
-const API_BASE_URL = localStorage.getItem('VNEURON_API_URL') || 
-    ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? '' : DEFAULT_API_BASE_URL);
+const API_BASE_URL = localStorage.getItem('VNEURON_API_URL') ?? DEFAULT_API_BASE_URL;
 const CARTO_API_KEY = 'cb1_4fhl_1_8fb9fd040c8200f6c33480ff';
 console.log("V-NEURON Backend URL: ", API_BASE_URL || "Local origin (relative)");
 
@@ -47,10 +46,9 @@ function initMap() {
         attributionControl: true
     }).setView([21.1458, 79.0882], 13);
 
-    // CartoDB Positron - Light and clean basemap
-    const lightTiles = L.tileLayer(`https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png?key=${CARTO_API_KEY}`, {
+    // CARTO Voyager raster basemap
+    const lightTiles = L.tileLayer(`https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png?key=${CARTO_API_KEY}`, {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-        subdomains: 'abcd',
         maxZoom: 20
     }).addTo(map);
 
@@ -85,6 +83,7 @@ function initMap() {
 async function loadStations() {
     try {
         const response = await fetch(API_BASE_URL + '/api/stations');
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
         knownLandmarks = await response.json();
         const datalist = document.getElementById("stations-list");
         datalist.innerHTML = "";
@@ -499,7 +498,7 @@ function escapeHTML(text) {
 
 // Helper to parse basic markdown bold (**text**), italics (*text*), and inline code (`text`)
 function parseMarkdown(text) {
-    let formatted = text;
+    let formatted = escapeHTML(String(text ?? ''));
     formatted = formatted.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
     formatted = formatted.replace(/\*(.*?)\*/g, "<em>$1</em>");
     formatted = formatted.replace(/`(.*?)`/g, "<code>$1</code>");
@@ -509,7 +508,9 @@ function parseMarkdown(text) {
 // 7. Chatbot UI Logic
 function toggleChatCollapse() {
     const chatPanel = document.getElementById("chat-panel");
-    chatPanel.classList.toggle("collapsed");
+    const chatHeader = document.querySelector(".chat-header");
+    const isExpanded = chatPanel.classList.toggle("collapsed") === false;
+    chatHeader.setAttribute("aria-expanded", String(isExpanded));
 }
 
 function handleChatKey(e) {
@@ -588,6 +589,7 @@ async function loadLandmarksDetailed() {
     try {
         const url = (typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : '') + '/api/landmarks/detailed';
         const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const landmarks = await response.json();
         
         landmarks.forEach(item => {
