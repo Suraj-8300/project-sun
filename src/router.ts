@@ -7,10 +7,12 @@ import {
   getPosts, createPost, updatePost, deletePost,
   getLinks, createLink, updateLink, deleteLink,
   getSiteSettings, updateSiteSettings,
+  getAdminStats,
 } from './api';
 
 const PAGE_ROUTES: Record<string, string> = {
   '/': '/index.html',
+  '/admin': '/index.html',
   '/portfolio': '/portfolio.html',
   '/personal': '/personal.html',
   '/instagram': '/instagram.html',
@@ -40,9 +42,13 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
     });
   }
 
-  // --- AUTH ---
+  // --- AUTH & STATS ---
   if (pathname === '/api/auth' && method === 'POST') {
     return authenticate(request, env);
+  }
+
+  if (pathname === '/api/admin/stats' && method === 'GET') {
+    return getAdminStats(request, env);
   }
 
   if (pathname === '/api/settings') {

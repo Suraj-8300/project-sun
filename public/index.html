@@ -44,7 +44,7 @@
             <p class="intro-description" id="profile-intro">I build practical machine-learning tools and thoughtful software, from low-level foundations to systems running at the edge.</p>
             <div class="intro-actions">
               <a class="button button-primary" href="#work">Explore my work <span aria-hidden="true">↓</span></a>
-              <a class="text-link" href="mailto:surajdhere8300@gmail.com">Say hello <span aria-hidden="true">↗</span></a>
+              <a class="text-link" id="intro-email-link" href="mailto:surajdhere8300@gmail.com">Say hello <span aria-hidden="true">↗</span></a>
             </div>
             <div class="intro-meta">
               <span><span class="meta-index">01</span> Applied AI</span>
@@ -70,9 +70,11 @@
 
         <div class="signal-strip" aria-label="Areas of focus">
           <span class="signal-title">CURRENT CURIOSITIES</span>
-          <span>Machine learning</span>
-          <span>Cloud architecture</span>
-          <span>Useful interfaces</span>
+          <div class="signal-items" id="profile-curiosities">
+            <span>Machine learning</span>
+            <span>Cloud architecture</span>
+            <span>Useful interfaces</span>
+          </div>
           <span class="signal-arrow" aria-hidden="true">↘</span>
         </div>
 
@@ -99,13 +101,13 @@
           <div class="about-grid">
             <div class="about-statement">
               <span class="about-mark" aria-hidden="true">“</span>
-              <p>I like taking a complicated idea, finding its useful shape, and building the system that makes it real.</p>
+              <p id="profile-about-statement">I like taking a complicated idea, finding its useful shape, and building the system that makes it real.</p>
             </div>
             <div class="about-detail">
-              <p>I’m a software engineer and AI developer based in Nagpur. My work moves between machine learning, backend architecture, and interfaces people can actually use. I care about clear trade-offs, resilient foundations, and shipping work that keeps improving.</p>
+              <p id="profile-about-detail">I’m a software engineer and AI developer based in Nagpur. My work moves between machine learning, backend architecture, and interfaces people can actually use. I care about clear trade-offs, resilient foundations, and shipping work that keeps improving.</p>
               <div class="toolkit-block">
                 <p class="toolkit-label">TOOLS I REACH FOR</p>
-                <div class="skill-list" aria-label="Skills and technologies">
+                <div class="skill-list" id="profile-skills" aria-label="Skills and technologies">
                   <span>Python</span><span>C++</span><span>TypeScript</span><span>Machine learning</span>
                   <span>Cloudflare Workers</span><span>D1 / SQLite</span><span>React</span><span>Leaflet</span>
                 </div>
@@ -130,23 +132,26 @@
         <section class="contact-section" id="contact" aria-labelledby="contact-title">
           <div class="contact-topline">
             <p class="section-kicker">04 <span>/</span> YOUR TURN</p>
-            <span class="contact-coordinate">21.1458° N / 79.0882° E</span>
+            <span class="contact-coordinate" id="profile-contact-coordinate">21.1458° N / 79.0882° E</span>
           </div>
           <div class="contact-main">
             <div>
               <h2 id="contact-title">Have a good<br />problem in mind?</h2>
               <p>Let’s make something useful out of it.</p>
             </div>
-            <a class="contact-button" href="mailto:surajdhere8300@gmail.com">Start a conversation <span aria-hidden="true">↗</span></a>
+            <a class="contact-button" id="contact-email-button" href="mailto:surajdhere8300@gmail.com">Start a conversation <span aria-hidden="true">↗</span></a>
           </div>
           <div class="socials-grid contact-links" id="socials-list" aria-label="Contact and social links"></div>
         </section>
       </main>
 
       <footer class="site-footer">
-        <span>© <span id="current-year">2026</span> Suraj Dhere</span>
-        <span>Made with care in Nagpur.</span>
-        <a href="#top">Back to top ↑</a>
+        <span>© <span id="current-year">2026</span> <span id="footer-author-name">Suraj Dhere</span></span>
+        <span>Made with care in <span id="footer-location-text">Nagpur</span>.</span>
+        <div class="site-footer-actions">
+          <a href="/admin" class="footer-admin-link" id="footer-admin-btn">Admin</a>
+          <a href="#top">Back to top ↑</a>
+        </div>
       </footer>
     </div>
 

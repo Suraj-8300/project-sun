@@ -9,18 +9,23 @@ CREATE TABLE projects (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL,
   status TEXT NOT NULL,
+  category TEXT DEFAULT '',
+  summary TEXT DEFAULT '',
   tech_tags TEXT DEFAULT '',
   live_url TEXT DEFAULT '',
+  image_url TEXT DEFAULT '',
+  action_label TEXT DEFAULT '',
+  action_url TEXT DEFAULT '',
   sort_order INTEGER DEFAULT 0,
   pinned INTEGER DEFAULT 0
 );
 
 -- Seed: Projects
-INSERT INTO projects (name, status, tech_tags, live_url) VALUES
-  ('CodeAudit AI', 'Active', 'Python,LLM,AST,Static Analysis', 'https://github.com/Suraj-8300'),
-  ('V-NEURON', 'Shipped', 'React,Node.js,Leaflet,Multimodal Routing', 'https://github.com/Suraj-8300'),
-  ('Project Sun', 'Active', 'Cloudflare Workers,D1,TypeScript,Edge Computing', 'https://suraj.shinelikesun.workers.dev'),
-  ('LoadMaster RL', 'In-Progress', 'Python,OpenAI Gym,Reinforcement Learning,Docker', 'https://github.com/Suraj-8300');
+INSERT INTO projects (name, status, category, summary, tech_tags, live_url, image_url, action_label, action_url, sort_order, pinned) VALUES
+  ('V-NEURON', 'Shipped', 'URBAN MOBILITY', 'A multimodal routing console for Nagpur, bringing roads, metro, and walking legs into one journey.', 'React,Node.js,Leaflet,Multimodal Routing', 'https://github.com/Suraj-8300', '/vneuron/preview.webp', 'Explore the live map', '/vneuron', 0, 1),
+  ('Project Sun', 'Active', 'EDGE SOFTWARE', 'A personal publishing system built on Cloudflare Workers and D1, with a private content console.', 'Cloudflare Workers,D1,TypeScript,Edge Computing', 'https://suraj.shinelikesun.workers.dev', '', 'Visit the live site', 'https://suraj.shinelikesun.workers.dev', 1, 0),
+  ('CodeAudit AI', 'Active', 'DEVELOPER TOOLS', 'An exploration of AI-assisted code review, combining language models with structure-aware analysis.', 'Python,LLM,AST,Static Analysis', 'https://github.com/Suraj-8300', '', 'View on GitHub', 'https://github.com/Suraj-8300', 2, 0),
+  ('LoadMaster RL', 'In-Progress', 'REINFORCEMENT LEARNING', 'A reinforcement-learning project exploring adaptive load management and decision-making.', 'Python,OpenAI Gym,Reinforcement Learning,Docker', 'https://github.com/Suraj-8300', '', 'View on GitHub', 'https://github.com/Suraj-8300', 3, 0);
 
 -- Links Table
 DROP TABLE IF EXISTS links;
@@ -81,4 +86,10 @@ INSERT INTO site_settings (setting_key, setting_value) VALUES
   ('display_name', 'Suraj Dhere'),
   ('role', 'Software engineer & AI developer'),
   ('intro', 'I build practical machine-learning tools and thoughtful software, from low-level foundations to systems running at the edge.'),
-  ('location', 'Nagpur, India');
+  ('location', 'Nagpur, India'),
+  ('about_statement', 'I like taking a complicated idea, finding its useful shape, and building the system that makes it real.'),
+  ('about_detail', 'I’m a software engineer and AI developer based in Nagpur. My work moves between machine learning, backend architecture, and interfaces people can actually use. I care about clear trade-offs, resilient foundations, and shipping work that keeps improving.'),
+  ('skills', 'Python, C++, TypeScript, Machine learning, Cloudflare Workers, D1 / SQLite, React, Leaflet'),
+  ('curiosities', 'Machine learning, Cloud architecture, Useful interfaces'),
+  ('contact_email', 'surajdhere8300@gmail.com'),
+  ('contact_coordinate', '21.1458° N / 79.0882° E');

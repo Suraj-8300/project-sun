@@ -19,6 +19,7 @@ function error(message: string, status = 500): Response {
 // --- Auth ---
 
 export function checkAuth(request: Request, env: Env): boolean {
+  if (!env.ADMIN_KEY) return false;
   const authHeader = request.headers.get('Authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) return false;
   const token = authHeader.slice(7);
@@ -28,6 +29,9 @@ export function checkAuth(request: Request, env: Env): boolean {
 export async function authenticate(request: Request, env: Env): Promise<Response> {
   try {
     const body = (await request.json()) as { password: string };
+    if (!env.ADMIN_KEY) {
+      return error('ADMIN_KEY is not configured on the server', 500);
+    }
     if (body.password === env.ADMIN_KEY) {
       return json({ authenticated: true });
     }
@@ -37,11 +41,30 @@ export async function authenticate(request: Request, env: Env): Promise<Response
   }
 }
 
-const DEFAULT_SITE_SETTINGS = {
+export const DEFAULT_SITE_SETTINGS = {
   display_name: 'Suraj Dhere',
   role: 'Software engineer & AI developer',
   intro: 'I build practical machine-learning tools and thoughtful software, from low-level foundations to systems running at the edge.',
   location: 'Nagpur, India',
+  about_statement: 'I like taking a complicated idea, finding its useful shape, and building the system that makes it real.',
+  about_detail: 'I’m a software engineer and AI developer based in Nagpur. My work moves between machine learning, backend architecture, and interfaces people can actually use. I care about clear trade-offs, resilient foundations, and shipping work that keeps improving.',
+  skills: 'Python, C++, TypeScript, Machine learning, Cloudflare Workers, D1 / SQLite, React, Leaflet',
+  curiosities: 'Machine learning, Cloud architecture, Useful interfaces',
+  contact_email: 'surajdhere8300@gmail.com',
+  contact_coordinate: '21.1458° N / 79.0882° E',
+};
+
+const SITE_SETTING_LIMITS: Record<keyof typeof DEFAULT_SITE_SETTINGS, number> = {
+  display_name: 80,
+  role: 100,
+  intro: 320,
+  location: 100,
+  about_statement: 300,
+  about_detail: 800,
+  skills: 300,
+  curiosities: 200,
+  contact_email: 120,
+  contact_coordinate: 80,
 };
 
 export async function getSiteSettings(env: Env): Promise<Response> {
@@ -68,13 +91,8 @@ export async function updateSiteSettings(request: Request, env: Env): Promise<Re
 
   try {
     const body = (await request.json()) as Record<string, unknown>;
-    const limits: Record<keyof typeof DEFAULT_SITE_SETTINGS, number> = {
-      display_name: 80,
-      role: 100,
-      intro: 320,
-      location: 100,
-    };
-    const updates = Object.entries(limits).flatMap(([key, maxLength]) => {
+    const updates = Object.entries(SITE_SETTING_LIMITS).flatMap(([key, maxLength]) => {
+      if (!(key in body)) return [];
       const value = body[key];
       if (typeof value !== 'string') return [];
       const settingValue = value.trim();
@@ -82,8 +100,8 @@ export async function updateSiteSettings(request: Request, env: Env): Promise<Re
       return [{ key, value: settingValue }];
     });
 
-    if (updates.length !== Object.keys(DEFAULT_SITE_SETTINGS).length) {
-      return error('Please provide valid values for every profile field', 400);
+    if (updates.length === 0) {
+      return error('Please provide valid values for profile fields', 400);
     }
 
     await env.SUNDB.batch(updates.map(({ key, value }) =>
@@ -115,20 +133,39 @@ export async function createProject(request: Request, env: Env): Promise<Respons
     const body = (await request.json()) as {
       name: string;
       status: string;
+      category?: string;
+      summary?: string;
       tech_tags?: string;
       live_url?: string;
+      image_url?: string;
+      action_label?: string;
+      action_url?: string;
       sort_order?: number;
       pinned?: number;
     };
     if (!body.name || !body.status) return error('Missing name or status', 400);
-    await env.SUNDB.prepare('INSERT INTO projects (name, status, tech_tags, live_url, sort_order, pinned) VALUES (?, ?, ?, ?, ?, ?)')
+
+    let sortOrder = body.sort_order;
+    if (sortOrder === undefined) {
+      const maxOrderRow = await env.SUNDB.prepare('SELECT COALESCE(MAX(sort_order), -1) AS max_order FROM projects').first<{ max_order: number }>();
+      sortOrder = (maxOrderRow?.max_order ?? -1) + 1;
+    }
+
+    await env.SUNDB.prepare(
+      'INSERT INTO projects (name, status, category, summary, tech_tags, live_url, image_url, action_label, action_url, sort_order, pinned) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    )
       .bind(
-        body.name,
-        body.status,
-        body.tech_tags || '',
-        body.live_url || '',
-        body.sort_order !== undefined ? body.sort_order : 0,
-        body.pinned !== undefined ? body.pinned : 0
+        body.name.trim(),
+        body.status.trim(),
+        body.category?.trim() || '',
+        body.summary?.trim() || '',
+        body.tech_tags?.trim() || '',
+        body.live_url?.trim() || '',
+        body.image_url?.trim() || '',
+        body.action_label?.trim() || '',
+        body.action_url?.trim() || '',
+        sortOrder,
+        body.pinned ? 1 : 0
       )
       .run();
     return json({ success: true }, 201);
@@ -143,20 +180,32 @@ export async function updateProject(request: Request, env: Env, id: string): Pro
     const body = (await request.json()) as {
       name: string;
       status: string;
+      category?: string;
+      summary?: string;
       tech_tags?: string;
       live_url?: string;
+      image_url?: string;
+      action_label?: string;
+      action_url?: string;
       sort_order?: number;
       pinned?: number;
     };
     if (!body.name || !body.status) return error('Missing name or status', 400);
-    await env.SUNDB.prepare('UPDATE projects SET name=?, status=?, tech_tags=?, live_url=?, sort_order=?, pinned=? WHERE id=?')
+    await env.SUNDB.prepare(
+      'UPDATE projects SET name=?, status=?, category=?, summary=?, tech_tags=?, live_url=?, image_url=?, action_label=?, action_url=?, sort_order=?, pinned=? WHERE id=?'
+    )
       .bind(
-        body.name,
-        body.status,
-        body.tech_tags || '',
-        body.live_url || '',
+        body.name.trim(),
+        body.status.trim(),
+        body.category?.trim() || '',
+        body.summary?.trim() || '',
+        body.tech_tags?.trim() || '',
+        body.live_url?.trim() || '',
+        body.image_url?.trim() || '',
+        body.action_label?.trim() || '',
+        body.action_url?.trim() || '',
         body.sort_order !== undefined ? body.sort_order : 0,
-        body.pinned !== undefined ? body.pinned : 0,
+        body.pinned ? 1 : 0,
         id
       )
       .run();
@@ -296,3 +345,27 @@ export async function deleteLink(env: Env, id: string, request: Request): Promis
     return error(e.message);
   }
 }
+
+// --- Admin Stats ---
+
+export async function getAdminStats(request: Request, env: Env): Promise<Response> {
+  if (!checkAuth(request, env)) return error('Unauthorized', 401);
+  try {
+    const [projectsRes, pinnedRes, postsRes, linksRes] = await Promise.all([
+      env.SUNDB.prepare('SELECT COUNT(*) AS count FROM projects').first<{ count: number }>(),
+      env.SUNDB.prepare('SELECT COUNT(*) AS count FROM projects WHERE pinned = 1').first<{ count: number }>(),
+      env.SUNDB.prepare('SELECT COUNT(*) AS count FROM posts').first<{ count: number }>(),
+      env.SUNDB.prepare('SELECT COUNT(*) AS count FROM links').first<{ count: number }>(),
+    ]);
+
+    return json({
+      projects: projectsRes?.count ?? 0,
+      pinned_projects: pinnedRes?.count ?? 0,
+      posts: postsRes?.count ?? 0,
+      links: linksRes?.count ?? 0,
+    });
+  } catch (e: any) {
+    return error(e.message);
+  }
+}
+

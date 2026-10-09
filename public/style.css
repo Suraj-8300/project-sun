@@ -835,6 +835,109 @@ main {
 
 .admin-logout-btn:hover { border-color: var(--red); color: var(--red); }
 
+.admin-icon-btn.move-btn { font-size: 0.65rem; }
+.admin-stats-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  margin-bottom: 16px;
+  background: rgba(129, 140, 248, 0.08);
+  border: 1px solid rgba(129, 140, 248, 0.2);
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--accent);
+}
+.admin-stats-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #34d399;
+  box-shadow: 0 0 6px #34d399;
+  display: inline-block;
+  margin-right: 6px;
+}
+.admin-section-divider {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  margin: 16px 0 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px dashed var(--border);
+}
+.admin-filter-bar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+  overflow-x: auto;
+}
+.admin-filter-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+.admin-filter-btn:hover, .admin-filter-btn.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.admin-search-input {
+  width: 100%;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  margin-bottom: 12px;
+  outline: none;
+  box-sizing: border-box;
+}
+.admin-search-input:focus { border-color: var(--accent); }
+.admin-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: #181824;
+  border: 1px solid var(--accent);
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  padding: 10px 18px;
+  border-radius: 8px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+  z-index: 10000;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+  opacity: 0;
+  pointer-events: none;
+}
+.admin-toast.visible {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+.admin-toast.error { border-color: #ef4444; background: #251216; }
+.admin-toast.success { border-color: #10b981; background: #0d231a; }
+
+.post-content a { color: var(--accent); text-decoration: underline; }
+.post-content code { font-family: var(--font-mono); font-size: 0.85em; background: rgba(0,0,0,0.06); padding: 2px 5px; border-radius: 3px; }
+body.portfolio-site .post-content code { background: rgba(25,25,24,0.08); }
+.post-content blockquote { border-left: 3px solid var(--accent); padding-left: 12px; margin: 8px 0; color: var(--text-muted); font-style: italic; }
+.post-content pre { background: rgba(0,0,0,0.05); padding: 10px; border-radius: 6px; overflow-x: auto; margin: 8px 0; }
+body.portfolio-site .post-content pre { background: rgba(25,25,24,0.06); }
+
 .hidden { display: none !important; }
 
 /* --- Responsive --- */
@@ -1401,6 +1504,10 @@ body.portfolio-site .contact-links .social-link svg { width: 15px; height: 15px;
 .site-footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 17px 40px; color: var(--ink-muted); font-family: var(--font-mono); font-size: 0.62rem; }
 .site-footer a { color: var(--ink); text-decoration: none; }
 .site-footer a:hover { color: var(--accent); }
+.site-footer-actions { display: inline-flex; align-items: center; gap: 16px; }
+.footer-admin-link { color: var(--ink-muted); text-decoration: none; transition: var(--transition); opacity: 0.7; }
+.footer-admin-link:hover { color: var(--accent); opacity: 1; }
+.signal-items { display: contents; }
 
 body.portfolio-site .loading-spinner { border-color: var(--line); border-top-color: var(--accent); }
 body.portfolio-site .empty-state { border-color: var(--line-strong); border-radius: 2px; color: var(--ink-muted); }
