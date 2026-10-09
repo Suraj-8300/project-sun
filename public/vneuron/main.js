@@ -4,7 +4,7 @@
 const DEFAULT_API_BASE_URL = 'https://surajdhere-v-neuron-x.hf.space';
 const API_BASE_URL = localStorage.getItem('VNEURON_API_URL') || 
     ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? '' : DEFAULT_API_BASE_URL);
-
+const CARTO_API_KEY = 'cb1_4fhl_1_8fb9fd040c8200f6c33480ff';
 console.log("V-NEURON Backend URL: ", API_BASE_URL || "Local origin (relative)");
 
 // Global State
@@ -48,7 +48,7 @@ function initMap() {
     }).setView([21.1458, 79.0882], 13);
 
     // CartoDB Positron - Light and clean basemap
-    const lightTiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    const lightTiles = L.tileLayer(`https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png?key=${CARTO_API_KEY}`, {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
         subdomains: 'abcd',
         maxZoom: 20
