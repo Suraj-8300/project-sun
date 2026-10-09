@@ -5,7 +5,7 @@
 
 // Route → page initializer map
 const routes = {
-  '/': initHub,
+  '/': initLandingPage,
   '/portfolio': initPortfolio,
   '/personal': initPersonal,
   '/instagram': () => {}
@@ -36,6 +36,18 @@ async function navigate(path, pushState = true) {
     const doc = parser.parseFromString(htmlText, 'text/html');
 
     document.title = doc.title;
+    const nextDescription = doc.querySelector('meta[name="description"]')?.content;
+    let descriptionMeta = document.querySelector('meta[name="description"]');
+    if (nextDescription) {
+      if (!descriptionMeta) {
+        descriptionMeta = document.createElement('meta');
+        descriptionMeta.name = 'description';
+        document.head.appendChild(descriptionMeta);
+      }
+      descriptionMeta.content = nextDescription;
+    } else {
+      descriptionMeta?.remove();
+    }
 
     const newContent = doc.getElementById('app-content');
     if (appContent && newContent) {
@@ -72,7 +84,7 @@ document.addEventListener('click', (e) => {
   const link = e.target.closest('a');
   if (link) {
     const href = link.getAttribute('href');
-    if (href && href.startsWith('/') && !href.startsWith('/api')) {
+    if (href && routes[href]) {
       e.preventDefault();
       if (window.location.pathname !== href) {
         navigate(href);
@@ -88,6 +100,105 @@ window.addEventListener('popstate', () => {
 // =============================================
 // Page Content Initializers
 // =============================================
+
+function escapeHTML(value) {
+  return String(value ?? '').replace(/[&<>"']/g, character => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  })[character]);
+}
+
+function safeHref(value) {
+  const href = String(value ?? '').trim();
+  if (!href) return null;
+
+  try {
+    const protocol = new URL(href, window.location.origin).protocol;
+    return ['http:', 'https:', 'mailto:'].includes(protocol) ? href : null;
+  } catch {
+    return null;
+  }
+}
+
+const PROJECT_DETAILS = {
+  'V-NEURON': {
+    category: 'URBAN MOBILITY',
+    summary: 'A multimodal routing console for Nagpur, bringing roads, metro, and walking legs into one journey.',
+    initials: 'VN',
+    image: '/vneuron/preview.webp',
+    imageAlt: 'V-NEURON route planner showing transit markers across Nagpur',
+    href: '/vneuron',
+    action: 'Explore the live map'
+  },
+  'Project Sun': {
+    category: 'EDGE SOFTWARE',
+    summary: 'A personal publishing system built on Cloudflare Workers and D1, with a private content console.',
+    initials: 'PS',
+    action: 'Visit the live site'
+  },
+  'CodeAudit AI': {
+    category: 'DEVELOPER TOOLS',
+    summary: 'An exploration of AI-assisted code review, combining language models with structure-aware analysis.',
+    initials: 'CA'
+  },
+  'LoadMaster RL': {
+    category: 'REINFORCEMENT LEARNING',
+    summary: 'A reinforcement-learning project exploring adaptive load management and decision-making.',
+    initials: 'LM'
+  }
+};
+
+function initLandingPage() {
+  initSiteNavigation();
+  loadProfileSettings();
+  initPortfolio();
+  initPersonal();
+  initHub();
+}
+
+async function loadProfileSettings() {
+  try {
+    const response = await fetch('/api/settings');
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const settings = await response.json();
+    const nameParts = String(settings.display_name || 'Suraj Dhere').trim().split(/\s+/);
+    const firstName = nameParts.shift() || 'Suraj';
+    const lastName = nameParts.join(' ');
+
+    document.getElementById('admin-trigger').textContent = settings.display_name || 'Suraj Dhere';
+    document.getElementById('profile-name-first').textContent = firstName;
+    document.getElementById('profile-name-last').textContent = lastName ? `${lastName}.` : '';
+    document.getElementById('profile-role').textContent = settings.role || '';
+    document.getElementById('profile-intro').textContent = settings.intro || '';
+    document.getElementById('profile-location').textContent = String(settings.location || '').toUpperCase();
+  } catch (error) {
+    console.warn('Profile settings are not available:', error);
+  }
+}
+
+function initSiteNavigation() {
+  const toggle = document.getElementById('menu-toggle');
+  const nav = document.getElementById('site-nav');
+  if (!toggle || !nav || toggle.dataset.ready) return;
+
+  toggle.dataset.ready = 'true';
+  toggle.addEventListener('click', () => {
+    const isOpen = nav.classList.toggle('is-open');
+    toggle.setAttribute('aria-expanded', String(isOpen));
+    toggle.querySelector('span').textContent = isOpen ? '−' : '+';
+  });
+
+  nav.querySelectorAll('a').forEach(link => {
+    link.addEventListener('click', () => {
+      nav.classList.remove('is-open');
+      toggle.setAttribute('aria-expanded', 'false');
+      toggle.querySelector('span').textContent = '+';
+    });
+  });
+}
 
 // --- Hub Page ---
 async function initHub() {
@@ -110,23 +221,26 @@ async function initHub() {
     }
 
     socialLinks.forEach(link => {
+      const href = safeHref(link.url);
+      if (!href) return;
+
       const key = link.platform.toLowerCase();
       const icon = ICONS[key] || '';
-      const isExternal = link.url.startsWith('http');
+      const isExternal = /^https?:/i.test(href) && new URL(href, window.location.origin).origin !== window.location.origin;
 
       const a = document.createElement('a');
-      a.href = link.url;
+      a.href = href;
       a.className = 'social-link';
       if (isExternal) {
         a.target = '_blank';
         a.rel = 'noopener noreferrer';
       }
-      a.innerHTML = `${icon}<span>${link.platform}</span>`;
+      a.innerHTML = `${icon}<span>${escapeHTML(link.platform)}</span>`;
       container.appendChild(a);
     });
   } catch (error) {
     console.error('Error loading socials:', error);
-    container.innerHTML = `<div class="empty-state">Error: ${error.message}</div>`;
+    container.innerHTML = `<div class="empty-state">Error: ${escapeHTML(error.message)}</div>`;
   }
 }
 
@@ -149,37 +263,60 @@ async function initPortfolio() {
       return;
     }
 
-    projects.forEach(project => {
-      const hasLink = !!project.live_url;
-      const card = document.createElement(hasLink ? 'a' : 'div');
-      card.className = 'project-card';
-
-      if (hasLink) {
-        card.href = project.live_url;
-        card.target = '_blank';
-        card.rel = 'noopener noreferrer';
+    projects.forEach((project, index) => {
+      const detail = PROJECT_DETAILS[project.name] || {};
+      const projectUrl = safeHref(project.live_url);
+      const hasExternalUrl = !!projectUrl && /^https?:/i.test(projectUrl);
+      const card = document.createElement('article');
+      card.className = 'project-card work-card';
+      if (detail.image) card.classList.add('work-card-featured');
+      if (project.pinned) {
+        card.classList.add('pinned');
       }
 
-      const statusKey = project.status.toLowerCase().replace(/\s+/g, '-');
+      const status = project.status || 'In progress';
+      const statusKey = status.toLowerCase().replace(/\s+/g, '-');
       const tags = (project.tech_tags || '')
         .split(',')
         .filter(t => t.trim())
-        .map(t => `<span class="tag">${t.trim()}</span>`)
+        .map(t => `<span class="tag">${escapeHTML(t.trim())}</span>`)
         .join('');
+      const title = escapeHTML(project.name || 'Untitled project');
+      const summary = escapeHTML(detail.summary || 'An ongoing project exploring practical software and applied problem-solving.');
+      const category = escapeHTML(detail.category || 'INDEPENDENT PROJECT');
+      const visual = detail.image
+        ? `<div class="work-card-visual"><img src="${detail.image}" alt="${escapeHTML(detail.imageAlt)}" loading="lazy" /></div>`
+        : `<div class="work-card-visual"><div class="work-card-placeholder"><strong>${escapeHTML(detail.initials || 'SD')}</strong><span>${category}</span></div></div>`;
+      const primaryHref = safeHref(detail.href) || (hasExternalUrl ? projectUrl : null);
+      const primaryLabel = detail.action || 'View on GitHub';
+      const primaryExternal = !!primaryHref && /^https?:/i.test(primaryHref) && new URL(primaryHref, window.location.origin).origin !== window.location.origin;
+      const primaryAction = primaryHref
+        ? `<a href="${escapeHTML(primaryHref)}"${primaryExternal ? ' target="_blank" rel="noopener noreferrer"' : ''}>${escapeHTML(primaryLabel)} <span aria-hidden="true">↗</span></a>`
+        : '';
+      const repositoryAction = detail.href && hasExternalUrl
+        ? `<a href="${escapeHTML(projectUrl)}" target="_blank" rel="noopener noreferrer">Repository <span aria-hidden="true">↗</span></a>`
+        : '';
+      const pinBadge = project.pinned ? '<span class="project-pin-badge">PINNED</span>' : '';
 
       card.innerHTML = `
-        <div class="project-name">${project.name}</div>
-        <div class="project-status">
-          <span class="status-dot ${statusKey}"></span>
-          ${project.status}
+        ${visual}
+        ${pinBadge}
+        <div class="work-card-body">
+          <div class="work-card-overline">
+            <span>${String(index + 1).padStart(2, '0')} / ${category}</span>
+            <span class="project-status"><span class="status-dot ${escapeHTML(statusKey)}"></span>${escapeHTML(status)}</span>
+          </div>
+          <h3 class="work-card-title">${title}</h3>
+          <p class="work-card-description">${summary}</p>
+          <div class="work-card-tags">${tags}</div>
+          <div class="work-card-actions">${primaryAction}${repositoryAction}</div>
         </div>
-        <div class="project-tags">${tags}</div>
       `;
       container.appendChild(card);
     });
   } catch (error) {
     console.error('Error loading projects:', error);
-    container.innerHTML = `<div class="empty-state">Error: ${error.message}</div>`;
+    container.innerHTML = `<div class="empty-state">Error: ${escapeHTML(error.message)}</div>`;
   }
 }
 
@@ -219,10 +356,10 @@ async function initPersonal() {
 
       card.innerHTML = `
         <div class="post-meta">
-          <span class="post-type ${typeClass}">${post.type}</span>
+          <span class="post-type ${escapeHTML(typeClass)}">${escapeHTML(post.type)}</span>
           <span class="post-date">${date}</span>
         </div>
-        <h3 class="post-title">${post.title}</h3>
+        <h3 class="post-title">${escapeHTML(post.title)}</h3>
         <div class="post-content-wrapper"></div>
       `;
 
@@ -240,7 +377,7 @@ async function initPersonal() {
             `;
           } else {
             wrapper.innerHTML = `
-              <div class="post-content">${getSnippet(fullText)}</div>
+              <div class="post-content">${escapeHTML(getSnippet(fullText))}</div>
               <div class="post-expand-btn">Read More ▾</div>
             `;
           }
@@ -265,7 +402,7 @@ async function initPersonal() {
     });
   } catch (error) {
     console.error('Error loading posts:', error);
-    container.innerHTML = `<div class="empty-state">Error: ${error.message}</div>`;
+    container.innerHTML = `<div class="empty-state">Error: ${escapeHTML(error.message)}</div>`;
   }
 }
 
@@ -326,7 +463,7 @@ function getSnippet(text) {
 
 let adminTriggerCount = 0;
 let adminTriggerTimeout = null;
-let currentAdminTab = 'projects';
+let currentAdminTab = 'profile';
 let editingItemId = null; // Stored if editing an item
 
 function getAuthHeader() {
@@ -452,11 +589,15 @@ function initAdminPanel() {
     drawer.className = 'admin-drawer';
     drawer.innerHTML = `
       <div class="admin-header">
-        <h3>Admin Console</h3>
-        <button class="admin-close" id="admin-close-btn">&times;</button>
+        <div>
+          <h3>Site Editor</h3>
+          <a class="admin-site-link" href="/#top">View live page ↗</a>
+        </div>
+        <button class="admin-close" id="admin-close-btn" aria-label="Close site editor">&times;</button>
       </div>
       <div class="admin-tabs">
-        <button class="admin-tab active" data-tab="projects">Projects</button>
+        <button class="admin-tab active" data-tab="profile">Profile</button>
+        <button class="admin-tab" data-tab="projects">Projects</button>
         <button class="admin-tab" data-tab="posts">Posts</button>
         <button class="admin-tab" data-tab="links">Links</button>
       </div>
@@ -518,6 +659,10 @@ async function renderAdminTab() {
       const res = await fetch('/api/projects');
       const projects = await res.json();
       renderProjectsTab(pane, projects);
+    } else if (currentAdminTab === 'profile') {
+      const res = await fetch('/api/settings');
+      if (!res.ok) throw new Error('Could not load profile settings');
+      renderProfileTab(pane, await res.json());
     } else if (currentAdminTab === 'posts') {
       const res = await fetch('/api/posts');
       const posts = await res.json();
@@ -528,11 +673,43 @@ async function renderAdminTab() {
       renderLinksTab(pane, links);
     }
   } catch (err) {
-    pane.innerHTML = `<div class="empty-state">Failed to load: ${err.message}</div>`;
+    pane.innerHTML = `<div class="empty-state">Failed to load: ${escapeHTML(err.message)}</div>`;
   }
 }
 
 // --- Tab Specific Renderers ---
+
+function renderProfileTab(pane, settings) {
+  pane.innerHTML = `
+    <form class="admin-form" id="profile-form">
+      <h4>Landing page intro</h4>
+      <label for="profile-display-name">Display name</label>
+      <input id="profile-display-name" type="text" maxlength="80" required />
+
+      <label for="profile-role-input">Role</label>
+      <input id="profile-role-input" type="text" maxlength="100" required />
+
+      <label for="profile-intro-input">Introduction</label>
+      <textarea id="profile-intro-input" rows="5" maxlength="320" required></textarea>
+
+      <label for="profile-location-input">Location</label>
+      <input id="profile-location-input" type="text" maxlength="100" required />
+
+      <div class="admin-form-actions">
+        <button type="submit" class="admin-btn primary">Save profile</button>
+      </div>
+    </form>
+    <p class="admin-help-text">Updates the public introduction at the top of your site.</p>
+    <button class="admin-logout-btn" id="admin-logout">Logout / Lock Panel</button>
+  `;
+
+  document.getElementById('profile-display-name').value = settings.display_name || '';
+  document.getElementById('profile-role-input').value = settings.role || '';
+  document.getElementById('profile-intro-input').value = settings.intro || '';
+  document.getElementById('profile-location-input').value = settings.location || '';
+  document.getElementById('profile-form').addEventListener('submit', handleProfileSubmit);
+  attachAdminLogout();
+}
 
 function renderProjectsTab(pane, items) {
   pane.innerHTML = `
@@ -540,7 +717,7 @@ function renderProjectsTab(pane, items) {
       <h4 style="font-family:var(--font-mono); font-size:0.75rem; color:var(--accent); margin-bottom:12px;">
         ${editingItemId ? 'Edit Project' : 'Create Project'}
       </h4>
-      
+
       <label>Project Name</label>
       <input type="text" id="proj-name" required placeholder="e.g. V-NEURON" />
 
@@ -557,6 +734,11 @@ function renderProjectsTab(pane, items) {
       <label>Live/GitHub URL</label>
       <input type="url" id="proj-url" placeholder="https://..." />
 
+      <label style="display: flex; align-items: center; gap: 8px; margin-top: 12px; margin-bottom: 15px; cursor: pointer; user-select: none;">
+        <input type="checkbox" id="proj-pinned" style="width: auto; margin: 0;" />
+        <span>Pin project to top of list 📌</span>
+      </label>
+
       <div class="admin-form-actions">
         <button type="submit" class="admin-btn primary">Save</button>
         ${editingItemId ? '<button type="button" class="admin-btn cancel" id="proj-cancel">Cancel</button>' : ''}
@@ -564,14 +746,19 @@ function renderProjectsTab(pane, items) {
     </form>
 
     <div class="admin-list">
-      <div class="section-label" style="margin-top:20px;">// existing projects</div>
+      <div class="section-label" style="margin-top:20px;">// existing projects (drag to reorder)</div>
       ${items.map(item => `
-        <div class="admin-item">
+        <div class="admin-item draggable-project" draggable="true" data-id="${item.id}" style="cursor: move;">
           <div class="admin-item-info">
-            <div class="admin-item-name">${item.name}</div>
-            <div class="admin-item-meta">${item.status} | ${item.tech_tags || 'No tags'}</div>
+            <div class="admin-item-name" style="display: flex; align-items: center; gap: 6px;">
+              ${item.pinned ? '📌 ' : ''}${escapeHTML(item.name)}
+            </div>
+            <div class="admin-item-meta">${escapeHTML(item.status)} | ${escapeHTML(item.tech_tags || 'No tags')}</div>
           </div>
           <div class="admin-item-actions">
+            <button class="admin-icon-btn pin-item" data-id="${item.id}" title="${item.pinned ? 'Unpin project' : 'Pin project'}">
+              ${item.pinned ? '📌' : '📍'}
+            </button>
             <button class="admin-icon-btn edit-item" data-id="${item.id}">✏️</button>
             <button class="admin-icon-btn delete delete-item" data-id="${item.id}">🗑️</button>
           </div>
@@ -590,6 +777,7 @@ function renderProjectsTab(pane, items) {
       document.getElementById('proj-status').value = item.status || 'Active';
       document.getElementById('proj-tags').value = item.tech_tags || '';
       document.getElementById('proj-url').value = item.live_url || '';
+      document.getElementById('proj-pinned').checked = !!item.pinned;
     }
   }
 
@@ -602,6 +790,7 @@ function renderProjectsTab(pane, items) {
     });
   }
   attachListListeners('projects', items);
+  initDragAndDrop();
 }
 
 function renderPostsTab(pane, items) {
@@ -640,8 +829,8 @@ function renderPostsTab(pane, items) {
       ${items.map(item => `
         <div class="admin-item">
           <div class="admin-item-info">
-            <div class="admin-item-name">${item.title}</div>
-            <div class="admin-item-meta">${item.type} | ${new Date(item.created_at).toLocaleDateString()}</div>
+            <div class="admin-item-name">${escapeHTML(item.title)}</div>
+            <div class="admin-item-meta">${escapeHTML(item.type)} | ${escapeHTML(new Date(item.created_at).toLocaleDateString())}</div>
           </div>
           <div class="admin-item-actions">
             <button class="admin-icon-btn edit-item" data-id="${item.id}">✏️</button>
@@ -720,8 +909,8 @@ function renderLinksTab(pane, items) {
       ${items.map(item => `
         <div class="admin-item">
           <div class="admin-item-info">
-            <div class="admin-item-name">${item.platform}</div>
-            <div class="admin-item-meta">${item.category} | ${item.url}</div>
+            <div class="admin-item-name">${escapeHTML(item.platform)}</div>
+            <div class="admin-item-meta">${escapeHTML(item.category)} | ${escapeHTML(item.url)}</div>
           </div>
           <div class="admin-item-actions">
             <button class="admin-icon-btn edit-item" data-id="${item.id}">✏️</button>
@@ -786,7 +975,50 @@ function attachListListeners(type, items) {
     });
   });
 
-  document.getElementById('admin-logout').addEventListener('click', () => {
+  if (type === 'projects') {
+    document.querySelectorAll('.pin-item').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.id;
+        const item = items.find(i => i.id == id);
+        if (!item) return;
+
+        const newPinned = item.pinned ? 0 : 1;
+
+        try {
+          const res = await fetch(`/api/projects/${id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              ...getAuthHeader()
+            },
+            body: JSON.stringify({
+              name: item.name,
+              status: item.status,
+              tech_tags: item.tech_tags,
+              live_url: item.live_url,
+              sort_order: item.sort_order,
+              pinned: newPinned
+            })
+          });
+
+          if (res.ok) {
+            renderAdminTab();
+            refreshMainSiteContent();
+          } else {
+            alert('Failed to update pin status.');
+          }
+        } catch (err) {
+          alert('Server error.');
+        }
+      });
+    });
+  }
+
+  attachAdminLogout();
+}
+
+function attachAdminLogout() {
+  document.getElementById('admin-logout')?.addEventListener('click', () => {
     localStorage.removeItem('admin_token');
     closeAdminDrawer();
     const fab = document.getElementById('admin-fab');
@@ -796,13 +1028,45 @@ function attachListListeners(type, items) {
 
 // --- Submit Handlers ---
 
+async function handleProfileSubmit(e) {
+  e.preventDefault();
+  const body = {
+    display_name: document.getElementById('profile-display-name').value.trim(),
+    role: document.getElementById('profile-role-input').value.trim(),
+    intro: document.getElementById('profile-intro-input').value.trim(),
+    location: document.getElementById('profile-location-input').value.trim()
+  };
+
+  try {
+    const response = await fetch('/api/settings', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeader()
+      },
+      body: JSON.stringify(body)
+    });
+
+    if (!response.ok) {
+      const result = await response.json();
+      throw new Error(result.error || 'Could not save profile');
+    }
+
+    refreshMainSiteContent();
+    renderAdminTab();
+  } catch (error) {
+    alert(error.message || 'Could not save profile.');
+  }
+}
+
 async function handleProjectSubmit(e) {
   e.preventDefault();
   const body = {
     name: document.getElementById('proj-name').value.trim(),
     status: document.getElementById('proj-status').value,
     tech_tags: document.getElementById('proj-tags').value.trim(),
-    live_url: document.getElementById('proj-url').value.trim()
+    live_url: document.getElementById('proj-url').value.trim(),
+    pinned: document.getElementById('proj-pinned').checked ? 1 : 0
   };
 
   const url = editingItemId ? `/api/projects/${editingItemId}` : '/api/projects';
@@ -828,6 +1092,76 @@ async function handleProjectSubmit(e) {
     }
   } catch (err) {
     alert('Network error saving project.');
+  }
+}
+
+// HTML5 Drag & Drop handlers for Project Sort Sequence
+function initDragAndDrop() {
+  const list = document.querySelector('.admin-list');
+  if (!list) return;
+
+  const draggables = list.querySelectorAll('.draggable-project');
+
+  draggables.forEach(draggable => {
+    draggable.addEventListener('dragstart', (e) => {
+      draggable.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+
+    draggable.addEventListener('dragend', () => {
+      draggable.classList.remove('dragging');
+      saveNewOrder();
+    });
+  });
+
+  list.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    const draggable = document.querySelector('.dragging');
+    if (!draggable) return;
+    const afterElement = getDragAfterElement(list, e.clientY);
+    if (afterElement == null) {
+      list.appendChild(draggable);
+    } else {
+      list.insertBefore(draggable, afterElement);
+    }
+  });
+}
+
+function getDragAfterElement(container, y) {
+  const draggableElements = [...container.querySelectorAll('.draggable-project:not(.dragging)')];
+
+  return draggableElements.reduce((closest, child) => {
+    const box = child.getBoundingClientRect();
+    const offset = y - box.top - box.height / 2;
+    if (offset < 0 && offset > closest.offset) {
+      return { offset: offset, element: child };
+    } else {
+      return closest;
+    }
+  }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+async function saveNewOrder() {
+  const draggables = [...document.querySelectorAll('.draggable-project')];
+  const ids = draggables.map(el => parseInt(el.dataset.id, 10));
+
+  try {
+    const res = await fetch('/api/projects/reorder', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeader()
+      },
+      body: JSON.stringify({ ids })
+    });
+
+    if (res.ok) {
+      refreshMainSiteContent();
+    } else {
+      console.error('Failed to save project order.');
+    }
+  } catch (err) {
+    console.error('Error saving project order:', err);
   }
 }
 
@@ -912,7 +1246,7 @@ window.addEventListener('DOMContentLoaded', () => {
   if (localStorage.getItem('admin_token')) {
     initAdminPanel();
   }
-  
+
   const path = window.location.pathname;
   const initFunc = routes[path];
   if (initFunc) {
@@ -922,6 +1256,8 @@ window.addEventListener('DOMContentLoaded', () => {
 
 // --- Interactive Electric Spark Mouse Trail ---
 (() => {
+  if (document.body.classList.contains('portfolio-site')) return;
+
   const canvas = document.createElement('canvas');
   canvas.id = 'electric-canvas';
   Object.assign(canvas.style, {
@@ -964,11 +1300,11 @@ window.addEventListener('DOMContentLoaded', () => {
 
     update() {
       this.life++;
-      
+
       // Jagged bolt wiggle
       this.vx += (Math.random() - 0.5) * 3;
       this.vy += (Math.random() - 0.5) * 3;
-      
+
       // Decay speed
       this.vx *= 0.94;
       this.vy *= 0.94;

@@ -1,54 +1,57 @@
-import {
-	env,
-	createExecutionContext,
-	waitOnExecutionContext,
-	SELF,
-} from "cloudflare:test";
-import { describe, it, expect } from "vitest";
-import worker from "../src";
+import { SELF } from "cloudflare:test";
+import { describe, expect, it } from "vitest";
 
-describe("Hello World user worker", () => {
-	describe("request for /message", () => {
-		it('/ responds with "Hello, World!" (unit style)', async () => {
-			const request = new Request<unknown, IncomingRequestCfProperties>(
-				"http://example.com/message"
-			);
-			// Create an empty context to pass to `worker.fetch()`.
-			const ctx = createExecutionContext();
-			const response = await worker.fetch(request, env, ctx);
-			// Wait for all `Promise`s passed to `ctx.waitUntil()` to settle before running test assertions
-			await waitOnExecutionContext(ctx);
-			expect(await response.text()).toMatchInlineSnapshot(`"Hello, World!"`);
-		});
+const publicPages = [
+	["/", "Suraj Dhere — Software Engineer &amp; AI Developer"],
+	["/portfolio", "Portfolio — Suraj"],
+	["/personal", "Personal — Suraj"],
+	["/instagram", "Instagram — Suraj"],
+	["/vneuron", "V-NEURON - Multimodal Routing Console"],
+];
 
-		it('responds with "Hello, World!" (integration style)', async () => {
-			const request = new Request("http://example.com/message");
-			const response = await SELF.fetch(request);
-			expect(await response.text()).toMatchInlineSnapshot(`"Hello, World!"`);
-		});
+describe("public page routes", () => {
+	it.each(publicPages)("serves %s", async (path, title) => {
+		const response = await SELF.fetch(`http://example.com${path}`);
+
+		expect(response.status).toBe(200);
+		expect(response.headers.get("content-type")).toContain("text/html");
+		expect(await response.text()).toContain(`<title>${title}</title>`);
+	});
+});
+
+describe("API route guards", () => {
+	it("returns 404 for an unknown route", async () => {
+		const response = await SELF.fetch("http://example.com/not-a-page");
+
+		expect(response.status).toBe(404);
 	});
 
-	describe("request for /random", () => {
-		it("/ responds with a random UUID (unit style)", async () => {
-			const request = new Request<unknown, IncomingRequestCfProperties>(
-				"http://example.com/random"
-			);
-			// Create an empty context to pass to `worker.fetch()`.
-			const ctx = createExecutionContext();
-			const response = await worker.fetch(request, env, ctx);
-			// Wait for all `Promise`s passed to `ctx.waitUntil()` to settle before running test assertions
-			await waitOnExecutionContext(ctx);
-			expect(await response.text()).toMatch(
-				/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/
-			);
+	it("rejects unauthenticated project mutations", async () => {
+		const response = await SELF.fetch("http://example.com/api/projects", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ name: "Test", status: "Active" }),
 		});
 
-		it("responds with a random UUID (integration style)", async () => {
-			const request = new Request("http://example.com/random");
-			const response = await SELF.fetch(request);
-			expect(await response.text()).toMatch(
-				/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/
-			);
+		expect(response.status).toBe(401);
+	});
+
+	it("rejects unauthenticated profile changes", async () => {
+		const response = await SELF.fetch("http://example.com/api/settings", {
+			method: "PUT",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ display_name: "Test" }),
 		});
+
+		expect(response.status).toBe(401);
+	});
+
+	it("supports API CORS preflight", async () => {
+		const response = await SELF.fetch("http://example.com/api/projects", {
+			method: "OPTIONS",
+		});
+
+		expect(response.status).toBe(200);
+		expect(response.headers.get("Access-Control-Allow-Methods")).toContain("POST");
 	});
 });

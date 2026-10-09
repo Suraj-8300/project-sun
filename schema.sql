@@ -10,7 +10,9 @@ CREATE TABLE projects (
   name TEXT NOT NULL,
   status TEXT NOT NULL,
   tech_tags TEXT DEFAULT '',
-  live_url TEXT DEFAULT ''
+  live_url TEXT DEFAULT '',
+  sort_order INTEGER DEFAULT 0,
+  pinned INTEGER DEFAULT 0
 );
 
 -- Seed: Projects
@@ -67,3 +69,16 @@ INSERT INTO posts (title, content, type, created_at) VALUES
   ('Building D1 on the Edge',
    'A deep dive into D1 database patterns — read replicas, parameterized queries, and caching strategies for ultra low latency data access at the edge.',
    'blog', '2026-06-26 11:00:00');
+
+-- Site profile settings
+DROP TABLE IF EXISTS site_settings;
+CREATE TABLE site_settings (
+  setting_key TEXT PRIMARY KEY,
+  setting_value TEXT NOT NULL
+);
+
+INSERT INTO site_settings (setting_key, setting_value) VALUES
+  ('display_name', 'Suraj Dhere'),
+  ('role', 'Software engineer & AI developer'),
+  ('intro', 'I build practical machine-learning tools and thoughtful software, from low-level foundations to systems running at the edge.'),
+  ('location', 'Nagpur, India');

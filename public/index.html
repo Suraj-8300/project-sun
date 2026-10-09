@@ -3,35 +3,152 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Suraj — Software Engineer building performant systems on the edge." />
-    <title>Suraj — Digital Hub</title>
+    <meta name="theme-color" content="#f4f3ed" />
+    <meta name="description" content="Suraj Dhere is a software engineer and AI developer in Nagpur, building useful machine-learning tools and software for the edge." />
+    <title>Suraj Dhere — Software Engineer &amp; AI Developer</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/style.css" />
   </head>
-  <body>
-    <header>
-      <nav class="nav-bar">
-        <a href="/" class="nav-link active">Hub</a>
-        <a href="/portfolio" class="nav-link">Portfolio</a>
-        <a href="/personal" class="nav-link">Personal</a>
-        <div class="nav-spacer"></div>
-        <span class="nav-url" id="admin-trigger">Suraj Dhere</span>
-      </nav>
-    </header>
+  <body class="portfolio-site">
+    <div class="portfolio-shell">
+      <header class="site-header">
+        <a class="site-brand" href="#top">
+          <span class="brand-mark" aria-hidden="true">SD</span>
+          <span class="brand-copy">
+            <span class="brand-name" id="admin-trigger">Suraj Dhere</span>
+            <span class="brand-caption">SOFTWARE / AI / SYSTEMS</span>
+          </span>
+        </a>
 
-    <main id="app-content">
-      <section class="hero">
-        <span class="hero-label">// software engineer & ml developer</span>
-        <h1 class="hero-title">Suraj Dhere</h1>
-        <p class="hero-subtitle">Software engineer and AI developer focused on machine learning models, serverless edge systems, and cloud architecture. Bridging C++, core data structures, and advanced cloud validation.</p>
-        <span class="hero-url">Nagpur, India</span>
-      </section>
+        <button class="menu-toggle" id="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav">
+          Menu <span aria-hidden="true">+</span>
+        </button>
 
-      <section class="socials-section">
-        <div class="section-label">// connectors</div>
-        <div class="socials-grid" id="socials-list"></div>
-      </section>
-    </main>
+        <nav class="site-nav" id="site-nav" aria-label="Main navigation">
+          <a href="#work">Work</a>
+          <a href="#about">About</a>
+          <a href="#notes">Notes</a>
+          <a class="nav-contact" href="#contact">Get in touch <span aria-hidden="true">↗</span></a>
+        </nav>
+      </header>
+
+      <main id="app-content">
+        <section class="intro-section" id="top" aria-labelledby="intro-title">
+          <div class="intro-copy">
+            <p class="eyebrow"><span class="eyebrow-dot" aria-hidden="true"></span> <span id="profile-location">NAGPUR, INDIA</span> <span class="eyebrow-separator">/</span> OPEN TO GOOD PROBLEMS</p>
+            <h1 id="intro-title"><span id="profile-name-first">Suraj</span><br /><span class="name-highlight" id="profile-name-last">Dhere.</span></h1>
+            <p class="intro-role" id="profile-role">Software engineer <span>&amp;</span> AI developer</p>
+            <p class="intro-description" id="profile-intro">I build practical machine-learning tools and thoughtful software, from low-level foundations to systems running at the edge.</p>
+            <div class="intro-actions">
+              <a class="button button-primary" href="#work">Explore my work <span aria-hidden="true">↓</span></a>
+              <a class="text-link" href="mailto:surajdhere8300@gmail.com">Say hello <span aria-hidden="true">↗</span></a>
+            </div>
+            <div class="intro-meta">
+              <span><span class="meta-index">01</span> Applied AI</span>
+              <span><span class="meta-index">02</span> Full-stack systems</span>
+              <span><span class="meta-index">03</span> Edge computing</span>
+            </div>
+          </div>
+
+          <figure class="intro-visual">
+            <div class="visual-frame">
+              <img src="/vneuron/preview.webp" alt="V-NEURON multimodal routing console showing Nagpur and transit markers" fetchpriority="high" />
+              <span class="visual-corner visual-corner-top" aria-hidden="true"></span>
+              <span class="visual-corner visual-corner-bottom" aria-hidden="true"></span>
+            </div>
+            <figcaption>
+              <span class="visual-index">FEATURED BUILD / 001</span>
+              <span class="visual-caption">A better way to move around Nagpur.</span>
+              <a href="/vneuron" aria-label="Open V-NEURON live map">Open V-NEURON <span aria-hidden="true">↗</span></a>
+            </figcaption>
+            <span class="visual-stamp" aria-hidden="true">BUILT<br />WITH INTENT</span>
+          </figure>
+        </section>
+
+        <div class="signal-strip" aria-label="Areas of focus">
+          <span class="signal-title">CURRENT CURIOSITIES</span>
+          <span>Machine learning</span>
+          <span>Cloud architecture</span>
+          <span>Useful interfaces</span>
+          <span class="signal-arrow" aria-hidden="true">↘</span>
+        </div>
+
+        <section class="page-section work-section" id="work" aria-labelledby="work-title">
+          <div class="section-heading">
+            <div>
+              <p class="section-kicker">01 <span>/</span> SELECTED WORK</p>
+              <h2 id="work-title">Built, tested,<br /><span>and still getting better.</span></h2>
+            </div>
+            <p class="section-aside">A few projects where software meets real constraints: messy data, moving people, and systems that need to hold up.</p>
+          </div>
+          <div class="projects-grid work-grid" id="projects-grid" aria-live="polite">
+            <div class="loading-spinner" aria-label="Loading projects"></div>
+          </div>
+        </section>
+
+        <section class="page-section about-section" id="about" aria-labelledby="about-title">
+          <div class="section-heading about-heading">
+            <div>
+              <p class="section-kicker">02 <span>/</span> A LITTLE ABOUT ME</p>
+              <h2 id="about-title">Curious by default.<br /><span>Careful by design.</span></h2>
+            </div>
+          </div>
+          <div class="about-grid">
+            <div class="about-statement">
+              <span class="about-mark" aria-hidden="true">“</span>
+              <p>I like taking a complicated idea, finding its useful shape, and building the system that makes it real.</p>
+            </div>
+            <div class="about-detail">
+              <p>I’m a software engineer and AI developer based in Nagpur. My work moves between machine learning, backend architecture, and interfaces people can actually use. I care about clear trade-offs, resilient foundations, and shipping work that keeps improving.</p>
+              <div class="toolkit-block">
+                <p class="toolkit-label">TOOLS I REACH FOR</p>
+                <div class="skill-list" aria-label="Skills and technologies">
+                  <span>Python</span><span>C++</span><span>TypeScript</span><span>Machine learning</span>
+                  <span>Cloudflare Workers</span><span>D1 / SQLite</span><span>React</span><span>Leaflet</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="page-section notes-section" id="notes" aria-labelledby="notes-title">
+          <div class="section-heading">
+            <div>
+              <p class="section-kicker">03 <span>/</span> FIELD NOTES</p>
+              <h2 id="notes-title">Things I’m thinking through.</h2>
+            </div>
+            <p class="section-aside">Short notes from building, learning, and figuring out what works.</p>
+          </div>
+          <div class="posts-feed notes-feed" id="posts-feed" aria-live="polite">
+            <div class="loading-spinner" aria-label="Loading notes"></div>
+          </div>
+        </section>
+
+        <section class="contact-section" id="contact" aria-labelledby="contact-title">
+          <div class="contact-topline">
+            <p class="section-kicker">04 <span>/</span> YOUR TURN</p>
+            <span class="contact-coordinate">21.1458° N / 79.0882° E</span>
+          </div>
+          <div class="contact-main">
+            <div>
+              <h2 id="contact-title">Have a good<br />problem in mind?</h2>
+              <p>Let’s make something useful out of it.</p>
+            </div>
+            <a class="contact-button" href="mailto:surajdhere8300@gmail.com">Start a conversation <span aria-hidden="true">↗</span></a>
+          </div>
+          <div class="socials-grid contact-links" id="socials-list" aria-label="Contact and social links"></div>
+        </section>
+      </main>
+
+      <footer class="site-footer">
+        <span>© <span id="current-year">2026</span> Suraj Dhere</span>
+        <span>Made with care in Nagpur.</span>
+        <a href="#top">Back to top ↑</a>
+      </footer>
+    </div>
 
     <script src="/router.js"></script>
   </body>
