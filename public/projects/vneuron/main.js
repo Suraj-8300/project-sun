@@ -1,10 +1,9 @@
 // V-NEURON - Frontend Script
 
-// Dynamic V-NEURON Backend URL Setup
-const DEFAULT_API_BASE_URL = 'https://surajdhere-v-neuron-x.hf.space';
-const API_BASE_URL = localStorage.getItem('VNEURON_API_URL') ?? DEFAULT_API_BASE_URL;
-const CARTO_API_KEY = 'cb1_4fhl_1_8fb9fd040c8200f6c33480ff';
-console.log("V-NEURON Backend URL: ", API_BASE_URL || "Local origin (relative)");
+// API configuration: respects injected window.PROJECT_CONFIG, localStorage override, or default relative URL
+const API_BASE_URL = (typeof window !== 'undefined' && window.PROJECT_CONFIG?.apiBaseUrl) || 
+    (typeof localStorage !== 'undefined' && localStorage.getItem('VNEURON_API_URL')) || 
+    '';
 
 // Global State
 let map;
@@ -19,6 +18,8 @@ let metroLayer = null;
 let currentScenario = 'off_peak';
 let currentMode = 'all_modes';
 let knownLandmarks = [];
+
+const CARTO_API_KEY = 'cb1_4fhl_1_8fb9fd040c8200f6c33480ff';
 
 // Simulation State
 let routeCoords = [];
@@ -46,11 +47,11 @@ function initMap() {
         attributionControl: true
     }).setView([21.1458, 79.0882], 13);
 
-    // CARTO Voyager raster basemap
-    const lightTiles = L.tileLayer(`https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=${CARTO_API_KEY}`, {
+    // CARTO Basemaps require an API key for raster tiles to remove the watermark.
+    const lightTiles = L.tileLayer(`https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png?key=${CARTO_API_KEY}`, {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-        maxZoom: 20,
-        detectRetina: true
+        subdomains: 'abcd',
+        maxZoom: 20
     }).addTo(map);
 
     const osmTiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -84,7 +85,6 @@ function initMap() {
 async function loadStations() {
     try {
         const response = await fetch(API_BASE_URL + '/api/stations');
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
         knownLandmarks = await response.json();
         const datalist = document.getElementById("stations-list");
         datalist.innerHTML = "";
@@ -136,7 +136,6 @@ function onMapClick(e) {
     }
 }
 
-// Set markers
 function setOriginMarker(coords) {
     if (originMarker) {
         originMarker.setLatLng(coords);
@@ -274,6 +273,9 @@ function drawRoute(data) {
     document.getElementById("origin").value = data.origin_name;
     document.getElementById("destination").value = data.destination_name;
 
+    // Draw color-coded polylines per segment (proportional coordinate slicing)
+    let remainingCoords = [...routeCoords];
+    
     // Draw base line for the entire route
     const basePolyline = L.polyline(routeCoords, {
         color: '#94a3b8',
@@ -281,6 +283,15 @@ function drawRoute(data) {
         opacity: 0.4
     }).addTo(routeLayersGroup);
 
+    // Draw the active color-coded overlay path
+    // We will segment the polyline. To do this, let's compute coordinates for each segment.
+    // We can estimate coordinate count proportional to distance, or backend can provide segments coordinates.
+    // Let's do a sliding window of coordinates matching segment distances.
+    // Since coordinates are ordered, we can map segments directly to segments coordinates.
+    // To be perfectly accurate and simple: we draw the overall polyline color-coded based on transit modes.
+    // Since we want high-end styling, let's slice routeCoords into matching sub-lines.
+    // Let's map each edge coordinate. In server.py, we have segment-specific properties.
+    // Let's draw segment lines:
     let startIdx = 0;
     
     data.segments.forEach(seg => {
@@ -499,7 +510,7 @@ function escapeHTML(text) {
 
 // Helper to parse basic markdown bold (**text**), italics (*text*), and inline code (`text`)
 function parseMarkdown(text) {
-    let formatted = escapeHTML(String(text ?? ''));
+    let formatted = text;
     formatted = formatted.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
     formatted = formatted.replace(/\*(.*?)\*/g, "<em>$1</em>");
     formatted = formatted.replace(/`(.*?)`/g, "<code>$1</code>");
@@ -509,9 +520,7 @@ function parseMarkdown(text) {
 // 7. Chatbot UI Logic
 function toggleChatCollapse() {
     const chatPanel = document.getElementById("chat-panel");
-    const chatHeader = document.querySelector(".chat-header");
-    const isExpanded = chatPanel.classList.toggle("collapsed") === false;
-    chatHeader.setAttribute("aria-expanded", String(isExpanded));
+    chatPanel.classList.toggle("collapsed");
 }
 
 function handleChatKey(e) {
@@ -590,7 +599,6 @@ async function loadLandmarksDetailed() {
     try {
         const url = (typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : '') + '/api/landmarks/detailed';
         const response = await fetch(url);
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const landmarks = await response.json();
         
         landmarks.forEach(item => {
@@ -713,3 +721,4 @@ window.initMobileLayout = function() {
 window.addEventListener('resize', () => {
     window.initMobileLayout();
 });
+

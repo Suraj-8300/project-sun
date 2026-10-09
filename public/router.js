@@ -165,9 +165,9 @@ const PROJECT_DETAILS = {
     category: 'URBAN MOBILITY',
     summary: 'A multimodal routing console for Nagpur, bringing roads, metro, and walking legs into one journey.',
     initials: 'VN',
-    image: '/vneuron/preview.webp',
+    image: '/projects/vneuron/preview.webp',
     imageAlt: 'V-NEURON route planner showing transit markers across Nagpur',
-    href: '/vneuron',
+    href: '/projects/vneuron',
     action: 'Explore the live map'
   },
   'Project Sun': {
@@ -194,6 +194,19 @@ function initLandingPage() {
   initPortfolio();
   initPersonal();
   initHub();
+  initHeroDemoTrigger();
+}
+
+function initHeroDemoTrigger() {
+  const heroVneuronLink = document.querySelector('figcaption a[href*="vneuron"]');
+  if (heroVneuronLink && !heroVneuronLink.dataset.demoBound) {
+    heroVneuronLink.dataset.demoBound = 'true';
+    heroVneuronLink.addEventListener('click', (e) => {
+      if (e.metaKey || e.ctrlKey || e.shiftKey) return;
+      e.preventDefault();
+      openProjectDemo('V-NEURON', '/projects/vneuron/');
+    });
+  }
 }
 
 async function loadProfileSettings() {
@@ -386,9 +399,10 @@ async function initPortfolio() {
         ? `<div class="work-card-visual"><img src="${escapeHTML(imageUrl)}" alt="${escapeHTML(detail.imageAlt || title)}" loading="lazy" /></div>`
         : `<div class="work-card-visual"><div class="work-card-placeholder"><strong>${escapeHTML(initials)}</strong><span>${escapeHTML(category)}</span></div></div>`;
 
+      const isInternalDemo = actionUrl && (actionUrl.startsWith('/projects/') || actionUrl.startsWith('/vneuron'));
       const primaryExternal = actionUrl && /^https?:/i.test(actionUrl) && new URL(actionUrl, window.location.origin).origin !== window.location.origin;
       const primaryAction = actionUrl
-        ? `<a href="${escapeHTML(actionUrl)}"${primaryExternal ? ' target="_blank" rel="noopener noreferrer"' : ''}>${escapeHTML(actionLabel)} <span aria-hidden="true">↗</span></a>`
+        ? `<a href="${escapeHTML(actionUrl)}"${isInternalDemo ? ` data-demo-project="${escapeHTML(title)}" data-demo-url="${escapeHTML(actionUrl)}"` : (primaryExternal ? ' target="_blank" rel="noopener noreferrer"' : '')}>${escapeHTML(actionLabel)} <span aria-hidden="true">↗</span></a>`
         : '';
 
       const showRepoAction = repoUrl && actionUrl !== repoUrl;
@@ -414,6 +428,20 @@ async function initPortfolio() {
       `;
       container.appendChild(card);
     });
+
+    if (!container.dataset.demoBound) {
+      container.dataset.demoBound = 'true';
+      container.addEventListener('click', (e) => {
+        const demoTrigger = e.target.closest('a[data-demo-project]');
+        if (demoTrigger) {
+          if (e.metaKey || e.ctrlKey || e.shiftKey) return;
+          e.preventDefault();
+          const projectTitle = demoTrigger.getAttribute('data-demo-project');
+          const demoUrl = demoTrigger.getAttribute('data-demo-url');
+          openProjectDemo(projectTitle, demoUrl);
+        }
+      });
+    }
   } catch (error) {
     console.error('Error loading projects:', error);
     container.innerHTML = `<div class="empty-state">Error: ${escapeHTML(error.message)}</div>`;
@@ -817,6 +845,100 @@ function closeAdminDrawer() {
   }
 }
 
+// --- Interactive In-Page Project Demo Modal ---
+function initProjectDemoModal() {
+  let modal = document.getElementById('project-demo-modal');
+  if (modal) return modal;
+
+  modal = document.createElement('div');
+  modal.id = 'project-demo-modal';
+  modal.className = 'project-demo-modal';
+  modal.setAttribute('aria-hidden', 'true');
+  modal.innerHTML = `
+    <div class="project-demo-overlay" id="project-demo-overlay"></div>
+    <div class="project-demo-window" role="dialog" aria-modal="true" aria-labelledby="project-demo-title">
+      <div class="project-demo-bar">
+        <div class="project-demo-info">
+          <span class="project-demo-tag">LIVE DEMO</span>
+          <h3 id="project-demo-title" class="project-demo-heading">Project Demo</h3>
+        </div>
+        <div class="project-demo-actions">
+          <a id="project-demo-external" href="#" target="_blank" rel="noopener noreferrer" class="project-demo-btn" title="Open in full tab">
+            Open in New Tab ↗
+          </a>
+          <button id="project-demo-close" class="project-demo-btn project-demo-btn-close" aria-label="Close demo">
+            ✕ Close
+          </button>
+        </div>
+      </div>
+      <div class="project-demo-frame-container">
+        <div class="project-demo-loader" id="project-demo-loader">
+          <div class="loading-spinner"></div>
+        </div>
+        <iframe id="project-demo-iframe" class="project-demo-iframe" src="about:blank" title="Project Live Preview" allow="geolocation; fullscreen"></iframe>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  const closeBtn = modal.querySelector('#project-demo-close');
+  const overlay = modal.querySelector('#project-demo-overlay');
+  const iframe = modal.querySelector('#project-demo-iframe');
+  const loader = modal.querySelector('#project-demo-loader');
+
+  closeBtn?.addEventListener('click', closeProjectDemo);
+  overlay?.addEventListener('click', closeProjectDemo);
+
+  iframe?.addEventListener('load', () => {
+    if (iframe.src && iframe.src !== 'about:blank' && !iframe.src.endsWith('about:blank')) {
+      loader?.classList.remove('active');
+    }
+  });
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal.classList.contains('open')) {
+      closeProjectDemo();
+    }
+  });
+
+  return modal;
+}
+
+function openProjectDemo(title, demoUrl, externalUrl) {
+  const modal = initProjectDemoModal();
+  const titleEl = modal.querySelector('#project-demo-title');
+  const externalLink = modal.querySelector('#project-demo-external');
+  const iframe = modal.querySelector('#project-demo-iframe');
+  const loader = modal.querySelector('#project-demo-loader');
+
+  if (titleEl) titleEl.textContent = title || 'Interactive Project Demo';
+  const targetUrl = demoUrl || externalUrl || '/projects/vneuron/';
+  if (externalLink) externalLink.href = targetUrl;
+
+  loader?.classList.add('active');
+  modal.classList.add('open');
+  modal.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+
+  if (iframe) {
+    iframe.src = targetUrl;
+  }
+}
+
+function closeProjectDemo() {
+  const modal = document.getElementById('project-demo-modal');
+  if (!modal) return;
+  modal.classList.remove('open');
+  modal.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
+  const iframe = modal.querySelector('#project-demo-iframe');
+  if (iframe) {
+    iframe.src = 'about:blank';
+  }
+}
+
+
 async function updateAdminHeaderStats() {
   const statsEl = document.getElementById('admin-stats-summary');
   if (!statsEl) return;
@@ -971,7 +1093,7 @@ function renderProjectsTab(pane, items) {
       <input type="url" id="proj-url" placeholder="https://github.com/..." />
 
       <label>Preview Image URL</label>
-      <input type="text" id="proj-image" placeholder="e.g. /vneuron/preview.webp or https://..." />
+      <input type="text" id="proj-image" placeholder="e.g. /projects/vneuron/preview.webp or https://..." />
 
       <label style="display: flex; align-items: center; gap: 8px; margin-top: 12px; margin-bottom: 15px; cursor: pointer; user-select: none;">
         <input type="checkbox" id="proj-pinned" style="width: auto; margin: 0;" />

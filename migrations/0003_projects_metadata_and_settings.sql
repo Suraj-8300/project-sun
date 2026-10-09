@@ -13,7 +13,7 @@ ALTER TABLE projects ADD COLUMN action_url TEXT DEFAULT '';
 UPDATE projects SET 
   category = 'URBAN MOBILITY',
   summary = 'A multimodal routing console for Nagpur, bringing roads, metro, and walking legs into one journey.',
-  image_url = '/vneuron/preview.webp',
+  image_url = '/projects/vneuron/preview.webp',
   action_label = 'Explore the live map',
   action_url = '/vneuron'
 WHERE name = 'V-NEURON';

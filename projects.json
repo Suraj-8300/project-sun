@@ -1,0 +1,17 @@
+{
+  "$schema": "./projects.schema.json",
+  "projects": [
+    {
+      "name": "V-NEURON",
+      "slug": "vneuron",
+      "sourceDir": "../04Fyp/V-NEURON-X/static",
+      "template": "../04Fyp/V-NEURON-X/templates/index.html",
+      "targetDir": "./public/projects/vneuron",
+      "apiBaseUrl": "https://surajdhere-v-neuron-x.hf.space",
+      "previewImage": "../04Fyp/V-NEURON-X/static/preview.webp",
+      "githubUrl": "https://github.com/Suraj-8300",
+      "liveUrl": "/projects/vneuron"
+    }
+  ]
+}
+

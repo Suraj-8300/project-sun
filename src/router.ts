@@ -16,7 +16,8 @@ const PAGE_ROUTES: Record<string, string> = {
   '/portfolio': '/portfolio.html',
   '/personal': '/personal.html',
   '/instagram': '/instagram.html',
-  '/vneuron': '/vneuron.html',
+  '/vneuron': '/projects/vneuron/index.html',
+  '/projects/vneuron': '/projects/vneuron/index.html',
 };
 
 // Extract ID from paths like /api/projects/5
@@ -97,6 +98,12 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
     const assetPath = PAGE_ROUTES[pathname];
     if (assetPath) {
       return env.ASSETS.fetch(new URL(assetPath, request.url).toString());
+    }
+
+    // Dynamic project route match: /projects/:slug -> /projects/:slug/index.html
+    const projectMatch = pathname.match(/^\/projects\/([a-zA-Z0-9_-]+)\/?$/);
+    if (projectMatch) {
+      return env.ASSETS.fetch(new URL(`/projects/${projectMatch[1]}/index.html`, request.url).toString());
     }
   }
 

@@ -22,12 +22,6 @@
     padding: 0;
 }
 
-#routing-app {
-    position: fixed;
-    inset: 0;
-    overflow: hidden;
-}
-
 html, body, #map {
     width: 100%;
     height: 100%;
@@ -589,10 +583,6 @@ html, body, #map {
     display: flex;
     flex-direction: column;
     background: white;
-}
-
-.chat-console.collapsed .chat-body {
-    display: none;
 }
 
 .chat-messages {

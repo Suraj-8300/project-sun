@@ -22,7 +22,7 @@ CREATE TABLE projects (
 
 -- Seed: Projects
 INSERT INTO projects (name, status, category, summary, tech_tags, live_url, image_url, action_label, action_url, sort_order, pinned) VALUES
-  ('V-NEURON', 'Shipped', 'URBAN MOBILITY', 'A multimodal routing console for Nagpur, bringing roads, metro, and walking legs into one journey.', 'React,Node.js,Leaflet,Multimodal Routing', 'https://github.com/Suraj-8300', '/vneuron/preview.webp', 'Explore the live map', '/vneuron', 0, 1),
+  ('V-NEURON', 'Shipped', 'URBAN MOBILITY', 'A multimodal routing console for Nagpur, bringing roads, metro, and walking legs into one journey.', 'React,Node.js,Leaflet,Multimodal Routing', 'https://github.com/Suraj-8300', '/projects/vneuron/preview.webp', 'Explore the live map', '/projects/vneuron', 0, 1),
   ('Project Sun', 'Active', 'EDGE SOFTWARE', 'A personal publishing system built on Cloudflare Workers and D1, with a private content console.', 'Cloudflare Workers,D1,TypeScript,Edge Computing', 'https://suraj.shinelikesun.workers.dev', '', 'Visit the live site', 'https://suraj.shinelikesun.workers.dev', 1, 0),
   ('CodeAudit AI', 'Active', 'DEVELOPER TOOLS', 'An exploration of AI-assisted code review, combining language models with structure-aware analysis.', 'Python,LLM,AST,Static Analysis', 'https://github.com/Suraj-8300', '', 'View on GitHub', 'https://github.com/Suraj-8300', 2, 0),
   ('LoadMaster RL', 'In-Progress', 'REINFORCEMENT LEARNING', 'A reinforcement-learning project exploring adaptive load management and decision-making.', 'Python,OpenAI Gym,Reinforcement Learning,Docker', 'https://github.com/Suraj-8300', '', 'View on GitHub', 'https://github.com/Suraj-8300', 3, 0);
