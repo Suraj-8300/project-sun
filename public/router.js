@@ -195,6 +195,7 @@ function initLandingPage() {
   initPersonal();
   initHub();
   initHeroDemoTrigger();
+  initConversationTrigger();
 }
 
 function initHeroDemoTrigger() {
@@ -207,6 +208,32 @@ function initHeroDemoTrigger() {
       openProjectDemo('V-NEURON', '/projects/vneuron/');
     });
   }
+}
+
+function initConversationTrigger() {
+  const startBtn = document.getElementById('start-conversation-btn');
+  if (startBtn && !startBtn.dataset.convBound) {
+    startBtn.dataset.convBound = 'true';
+    startBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      openConversationModal();
+    });
+  }
+
+  // Smooth scroll for all #contact links to bottom of page
+  document.querySelectorAll('a[href="#contact"]').forEach(link => {
+    if (!link.dataset.scrollBound) {
+      link.dataset.scrollBound = 'true';
+      link.addEventListener('click', (e) => {
+        const contactSection = document.getElementById('contact');
+        if (contactSection) {
+          e.preventDefault();
+          contactSection.scrollIntoView({ behavior: 'smooth' });
+          history.pushState(null, '', '#contact');
+        }
+      });
+    }
+  });
 }
 
 async function loadProfileSettings() {
@@ -269,13 +296,6 @@ async function loadProfileSettings() {
 
     const coordinateEl = document.getElementById('profile-contact-coordinate');
     if (coordinateEl && settings.contact_coordinate) coordinateEl.textContent = settings.contact_coordinate;
-
-    const email = settings.contact_email || 'surajdhere8300@gmail.com';
-    const emailButton = document.getElementById('contact-email-button');
-    if (emailButton) emailButton.href = `mailto:${email}`;
-
-    const introEmailLink = document.getElementById('intro-email-link');
-    if (introEmailLink) introEmailLink.href = `mailto:${email}`;
   } catch (error) {
     console.warn('Profile settings are not available:', error);
   }
@@ -798,6 +818,7 @@ function initAdminPanel() {
         <button class="admin-tab" data-tab="projects">Projects</button>
         <button class="admin-tab" data-tab="posts">Posts</button>
         <button class="admin-tab" data-tab="links">Links</button>
+        <button class="admin-tab" data-tab="inquiries">Inquiries</button>
       </div>
       <div class="admin-content" id="admin-content-pane">
         <!-- Rendered Dynamically -->
@@ -938,6 +959,345 @@ function closeProjectDemo() {
   }
 }
 
+// --- Start a Conversation Modal ---
+let selectedAttachment = null;
+
+function initConversationModal() {
+  let modal = document.getElementById('conversation-modal');
+  if (modal) return modal;
+
+  modal = document.createElement('div');
+  modal.id = 'conversation-modal';
+  modal.className = 'conversation-modal';
+  modal.setAttribute('aria-hidden', 'true');
+  modal.innerHTML = `
+    <div class="conversation-overlay" id="conv-overlay"></div>
+    <div class="conversation-window" role="dialog" aria-modal="true" aria-labelledby="conv-title">
+      <div class="conversation-header">
+        <div class="conversation-header-info">
+          <span class="conversation-tag">DIRECT INBOX</span>
+          <h3 id="conv-title" class="conversation-title">Start a Conversation</h3>
+          <p class="conversation-subtitle">Send a message and attachment directly from the site. Suraj will receive it on his Gmail.</p>
+        </div>
+        <button type="button" class="conversation-close-btn" id="conv-close-btn" aria-label="Close conversation modal">✕</button>
+      </div>
+
+      <form id="conversation-form" class="conversation-form">
+        <div class="conversation-field">
+          <label for="conv-name">Your Name *</label>
+          <input type="text" id="conv-name" required placeholder="e.g. Alex Sharma" maxlength="100" />
+        </div>
+
+        <div class="conversation-field">
+          <label for="conv-email">Your Email *</label>
+          <input type="email" id="conv-email" required placeholder="e.g. alex@example.com" maxlength="120" />
+        </div>
+
+        <div class="conversation-field">
+          <label for="conv-subject">Subject (Optional)</label>
+          <input type="text" id="conv-subject" placeholder="e.g. Collaboration / Project Inquiry" maxlength="150" />
+        </div>
+
+        <div class="conversation-field">
+          <label for="conv-message">Message *</label>
+          <textarea id="conv-message" required rows="4" placeholder="Tell me about your project, problem, idea, or question..." maxlength="5000"></textarea>
+        </div>
+
+        <div class="conversation-field">
+          <label>Attachment (Optional, max 5MB)</label>
+          <div class="conversation-file-drop" id="conv-dropzone">
+            <input type="file" id="conv-file-input" class="conversation-file-input" accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx,.txt,.zip" />
+            <label for="conv-file-input" class="conversation-file-label">
+              <span><strong>Choose a file</strong> or drag &amp; drop here</span>
+              <span>PDF, Images, DOC, TXT, or ZIP up to 5MB</span>
+            </label>
+            <div id="conv-file-chip-container" style="display:none;"></div>
+          </div>
+        </div>
+
+        <div id="conv-status" class="conversation-status"></div>
+
+        <div class="conversation-actions">
+          <button type="button" class="conversation-cancel-btn" id="conv-cancel-btn">Cancel</button>
+          <button type="submit" class="conversation-submit-btn" id="conv-submit-btn">Send Message <span aria-hidden="true">↗</span></button>
+        </div>
+      </form>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  const closeBtn = modal.querySelector('#conv-close-btn');
+  const cancelBtn = modal.querySelector('#conv-cancel-btn');
+  const overlay = modal.querySelector('#conv-overlay');
+  const fileInput = modal.querySelector('#conv-file-input');
+  const dropzone = modal.querySelector('#conv-dropzone');
+  const form = modal.querySelector('#conversation-form');
+
+  closeBtn?.addEventListener('click', closeConversationModal);
+  cancelBtn?.addEventListener('click', closeConversationModal);
+  overlay?.addEventListener('click', closeConversationModal);
+
+  fileInput?.addEventListener('change', async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      showConvStatus('File exceeds the 5MB size limit. Please choose a smaller file.', 'error');
+      fileInput.value = '';
+      return;
+    }
+
+    try {
+      const base64Data = await readFileAsBase64(file);
+      selectedAttachment = {
+        name: file.name,
+        type: file.type || 'application/octet-stream',
+        size: file.size,
+        data: base64Data
+      };
+      renderAttachmentChip(file.name, file.size);
+    } catch {
+      showConvStatus('Could not read the selected file.', 'error');
+    }
+  });
+
+  ['dragenter', 'dragover'].forEach(name => {
+    dropzone?.addEventListener(name, (e) => {
+      e.preventDefault();
+      dropzone.style.borderColor = 'var(--accent, #e65c00)';
+    });
+  });
+  ['dragleave', 'drop'].forEach(name => {
+    dropzone?.addEventListener(name, (e) => {
+      e.preventDefault();
+      dropzone.style.borderColor = '';
+    });
+  });
+  dropzone?.addEventListener('drop', async (e) => {
+    const file = e.dataTransfer?.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      showConvStatus('File exceeds the 5MB size limit.', 'error');
+      return;
+    }
+    const base64Data = await readFileAsBase64(file);
+    selectedAttachment = {
+      name: file.name,
+      type: file.type || 'application/octet-stream',
+      size: file.size,
+      data: base64Data
+    };
+    renderAttachmentChip(file.name, file.size);
+  });
+
+  form?.addEventListener('submit', handleConversationSubmit);
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal.classList.contains('open')) {
+      closeConversationModal();
+    }
+  });
+
+  return modal;
+}
+
+function readFileAsBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function renderAttachmentChip(name, size) {
+  const container = document.getElementById('conv-file-chip-container');
+  if (!container) return;
+  const sizeKb = (size / 1024).toFixed(1);
+  container.innerHTML = `
+    <div class="conversation-file-chip">
+      <span>📎 <strong>${escapeHTML(name)}</strong> (${sizeKb} KB)</span>
+      <button type="button" onclick="window.clearSelectedAttachment()" title="Remove file">✕</button>
+    </div>
+  `;
+  container.style.display = 'block';
+}
+
+function clearSelectedAttachment() {
+  selectedAttachment = null;
+  const fileInput = document.getElementById('conv-file-input');
+  if (fileInput) fileInput.value = '';
+  const container = document.getElementById('conv-file-chip-container');
+  if (container) {
+    container.innerHTML = '';
+    container.style.display = 'none';
+  }
+}
+window.clearSelectedAttachment = clearSelectedAttachment;
+
+function openConversationModal() {
+  const modal = initConversationModal();
+  clearSelectedAttachment();
+  const form = document.getElementById('conversation-form');
+  if (form) form.reset();
+  const status = document.getElementById('conv-status');
+  if (status) {
+    status.style.display = 'none';
+    status.className = 'conversation-status';
+  }
+  const submitBtn = document.getElementById('conv-submit-btn');
+  if (submitBtn) {
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = 'Send Message <span aria-hidden="true">↗</span>';
+  }
+  modal.classList.add('open');
+  modal.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => document.getElementById('conv-name')?.focus(), 100);
+}
+
+function closeConversationModal() {
+  const modal = document.getElementById('conversation-modal');
+  if (!modal) return;
+  modal.classList.remove('open');
+  modal.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
+}
+
+function showConvStatus(msg, type) {
+  const status = document.getElementById('conv-status');
+  if (!status) return;
+  status.textContent = msg;
+  status.className = `conversation-status ${type}`;
+  status.style.display = 'block';
+}
+
+async function handleConversationSubmit(e) {
+  e.preventDefault();
+  const name = document.getElementById('conv-name').value.trim();
+  const email = document.getElementById('conv-email').value.trim();
+  const subject = document.getElementById('conv-subject').value.trim();
+  const message = document.getElementById('conv-message').value.trim();
+  const submitBtn = document.getElementById('conv-submit-btn');
+
+  if (!name || !email || !message) {
+    showConvStatus('Please fill in your name, email, and message.', 'error');
+    return;
+  }
+
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = 'Sending...';
+  }
+
+  try {
+    const res = await fetch('/api/contact', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name,
+        email,
+        subject,
+        message,
+        attachment: selectedAttachment
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || 'Failed to send message.');
+    }
+
+    showConvStatus(`Message sent successfully! Thank you ${name}, Suraj will review your message on his Gmail soon.`, 'success');
+    if (submitBtn) {
+      submitBtn.innerHTML = '✓ Sent!';
+    }
+    setTimeout(() => {
+      closeConversationModal();
+    }, 2800);
+  } catch (err) {
+    showConvStatus(err.message || 'Error sending message. Please try again.', 'error');
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = 'Send Message <span aria-hidden="true">↗</span>';
+    }
+  }
+}
+
+function renderInquiriesTab(pane, inquiries) {
+  if (!Array.isArray(inquiries) || inquiries.length === 0) {
+    pane.innerHTML = `
+      <div class="empty-state" style="padding: 40px 20px; text-align: center;">
+        <p style="margin: 0; font-size: 1rem; color: #fff;">No inquiries received yet.</p>
+        <p style="margin: 8px 0 0; font-size: 0.8rem; color: #9ca3af;">Messages and files sent via "Start a conversation" will appear here and in your Gmail.</p>
+      </div>
+      <button class="admin-logout-btn" id="admin-logout">Logout / Lock Panel</button>
+    `;
+    document.getElementById('admin-logout')?.addEventListener('click', handleLogout);
+    return;
+  }
+
+  pane.innerHTML = `
+    <div class="admin-list" style="margin-top:0;">
+      <div class="section-label">// received inquiries (${inquiries.length})</div>
+      ${inquiries.map((item) => {
+        const dateStr = item.created_at ? new Date(item.created_at).toLocaleString() : 'Recent';
+        const hasAttachment = item.attachment_name && item.attachment_data;
+        return `
+          <div class="admin-item" style="flex-direction: column; align-items: stretch; gap: 10px; padding: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;">
+              <div>
+                <strong style="color: #fff; font-size: 0.95rem;">${escapeHTML(item.name)}</strong>
+                <a href="mailto:${escapeHTML(item.email)}" style="color: var(--accent); margin-left: 8px; font-size: 0.8rem; text-decoration: none;">&lt;${escapeHTML(item.email)}&gt;</a>
+                ${item.subject ? `<div style="font-size: 0.8rem; color: #d1d5db; margin-top: 2px;">Subject: ${escapeHTML(item.subject)}</div>` : ''}
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 0.68rem; color: #9ca3af; font-family: var(--font-mono);">${dateStr}</span>
+                <button class="admin-icon-btn delete delete-inquiry-btn" data-id="${item.id}" title="Delete inquiry">🗑️</button>
+              </div>
+            </div>
+
+            <div style="background: #0a0c0f; padding: 12px; border-radius: 4px; border: 1px solid #232732; font-size: 0.86rem; color: #e5e7eb; line-height: 1.5; white-space: pre-wrap;">${escapeHTML(item.message)}</div>
+
+            ${hasAttachment ? `
+              <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+                <a href="${item.attachment_data}" download="${escapeHTML(item.attachment_name)}" class="admin-btn" style="padding: 6px 12px; font-size: 0.72rem; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; background: #20242e; border: 1px solid #3b4254; color: #fff;">
+                  📎 Download Attachment: <strong>${escapeHTML(item.attachment_name)}</strong> (${(item.attachment_size / 1024).toFixed(1)} KB)
+                </a>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('')}
+    </div>
+    <button class="admin-logout-btn" id="admin-logout">Logout / Lock Panel</button>
+  `;
+
+  document.getElementById('admin-logout')?.addEventListener('click', handleLogout);
+
+  pane.querySelectorAll('.delete-inquiry-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.id;
+      if (!confirm('Are you sure you want to delete this inquiry?')) return;
+      try {
+        const res = await fetch(`/api/inquiries/${id}`, {
+          method: 'DELETE',
+          headers: getAuthHeader()
+        });
+        if (res.status === 401) { handleUnauthorized(); return; }
+        if (res.ok) {
+          showAdminToast('Inquiry deleted', 'info');
+          renderAdminTab();
+        }
+      } catch {
+        showAdminToast('Failed to delete inquiry', 'error');
+      }
+    });
+  });
+}
+
 
 async function updateAdminHeaderStats() {
   const statsEl = document.getElementById('admin-stats-summary');
@@ -952,7 +1312,7 @@ async function updateAdminHeaderStats() {
       const stats = await res.json();
       statsEl.innerHTML = `
         <span class="admin-stats-dot"></span>
-        <span>D1 SUNDB: <strong>${stats.projects}</strong> projects (${stats.pinned_projects} pinned) • <strong>${stats.posts}</strong> notes • <strong>${stats.links}</strong> links</span>
+        <span>D1 SUNDB: <strong>${stats.projects}</strong> projects (${stats.pinned_projects} pinned) • <strong>${stats.posts}</strong> notes • <strong>${stats.links}</strong> links • <strong>${stats.inquiries || 0}</strong> inquiries</span>
       `;
     }
   } catch {
@@ -989,6 +1349,11 @@ async function renderAdminTab() {
       if (res.status === 401) { handleUnauthorized(); return; }
       const links = await res.json();
       renderLinksTab(pane, links);
+    } else if (currentAdminTab === 'inquiries') {
+      const res = await fetch('/api/inquiries', { headers: getAuthHeader() });
+      if (res.status === 401) { handleUnauthorized(); return; }
+      const inquiries = await res.json();
+      renderInquiriesTab(pane, inquiries);
     }
   } catch (err) {
     pane.innerHTML = `<div class="empty-state">Failed to load: ${escapeHTML(err.message)}</div>`;

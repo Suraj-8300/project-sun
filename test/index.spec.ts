@@ -55,6 +55,12 @@ describe("API route guards", () => {
 		expect(response.status).toBe(401);
 	});
 
+	it("rejects unauthenticated inquiries requests", async () => {
+		const response = await SELF.fetch("http://example.com/api/inquiries");
+
+		expect(response.status).toBe(401);
+	});
+
 	it("supports API CORS preflight", async () => {
 		const response = await SELF.fetch("http://example.com/api/projects", {
 			method: "OPTIONS",
@@ -174,5 +180,58 @@ describe("API data and authentication", () => {
 		expect(created).toBeDefined();
 		expect(created?.category).toBe("AUTONOMOUS AGENTS");
 		expect(created?.summary).toBe("An autonomous agent orchestrator running on Cloudflare Workers.");
+	});
+
+	it("rejects contact submission when required fields are missing", async () => {
+		const res = await SELF.fetch("http://example.com/api/contact", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ name: "Alex" }),
+		});
+		expect(res.status).toBe(400);
+	});
+
+	it("submits a contact inquiry and allows admin to retrieve and delete it", async () => {
+		const submitRes = await SELF.fetch("http://example.com/api/contact", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({
+				name: "Jane Doe",
+				email: "jane@example.com",
+				subject: "Collaboration Opportunity",
+				message: "Hello Suraj, let's collaborate on an AI project!",
+				attachment_name: "test.pdf",
+				attachment_type: "application/pdf",
+				attachment_size: 1024,
+				attachment_data: "data:application/pdf;base64,JVBERi0xLjQK",
+			}),
+		});
+		expect(submitRes.status).toBe(200);
+		const submitJson = (await submitRes.json()) as { success: boolean; message: string };
+		expect(submitJson.success).toBe(true);
+
+		// Admin retrieves inquiries
+		const listRes = await SELF.fetch("http://example.com/api/inquiries", {
+			headers: {
+				Authorization: "Bearer test-secret-key",
+			},
+		});
+		expect(listRes.status).toBe(200);
+		const inquiries = (await listRes.json()) as Array<{ id: number; name: string; email: string; subject: string; attachment_name: string }>;
+		const found = inquiries.find((i) => i.email === "jane@example.com");
+		expect(found).toBeDefined();
+		expect(found?.name).toBe("Jane Doe");
+		expect(found?.attachment_name).toBe("test.pdf");
+
+		// Admin deletes inquiry
+		if (found) {
+			const deleteRes = await SELF.fetch(`http://example.com/api/inquiries/${found.id}`, {
+				method: "DELETE",
+				headers: {
+					Authorization: "Bearer test-secret-key",
+				},
+			});
+			expect(deleteRes.status).toBe(200);
+		}
 	});
 });

@@ -351,11 +351,12 @@ export async function deleteLink(env: Env, id: string, request: Request): Promis
 export async function getAdminStats(request: Request, env: Env): Promise<Response> {
   if (!checkAuth(request, env)) return error('Unauthorized', 401);
   try {
-    const [projectsRes, pinnedRes, postsRes, linksRes] = await Promise.all([
+    const [projectsRes, pinnedRes, postsRes, linksRes, inquiriesRes] = await Promise.all([
       env.SUNDB.prepare('SELECT COUNT(*) AS count FROM projects').first<{ count: number }>(),
       env.SUNDB.prepare('SELECT COUNT(*) AS count FROM projects WHERE pinned = 1').first<{ count: number }>(),
       env.SUNDB.prepare('SELECT COUNT(*) AS count FROM posts').first<{ count: number }>(),
       env.SUNDB.prepare('SELECT COUNT(*) AS count FROM links').first<{ count: number }>(),
+      env.SUNDB.prepare('SELECT COUNT(*) AS count FROM inquiries').first<{ count: number }>().catch(() => ({ count: 0 })),
     ]);
 
     return json({
@@ -363,9 +364,156 @@ export async function getAdminStats(request: Request, env: Env): Promise<Respons
       pinned_projects: pinnedRes?.count ?? 0,
       posts: postsRes?.count ?? 0,
       links: linksRes?.count ?? 0,
+      inquiries: inquiriesRes?.count ?? 0,
     });
   } catch (e: any) {
     return error(e.message);
   }
 }
+
+// --- Inquiries / Contact Messages ---
+
+export async function submitContactMessage(request: Request, env: Env): Promise<Response> {
+  try {
+    const body = (await request.json()) as {
+      name?: string;
+      email?: string;
+      subject?: string;
+      message?: string;
+      attachment?: {
+        name: string;
+        type?: string;
+        size?: number;
+        data: string;
+      };
+    };
+
+    const name = String(body.name || '').trim();
+    const email = String(body.email || '').trim();
+    const subject = String(body.subject || '').trim();
+    const message = String(body.message || '').trim();
+
+    if (!name || name.length > 100) {
+      return error('Please enter your name (max 100 characters)', 400);
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || !emailRegex.test(email) || email.length > 120) {
+      return error('Please enter a valid email address', 400);
+    }
+    if (!message || message.length > 5000) {
+      return error('Please enter a message (max 5000 characters)', 400);
+    }
+
+    const hasAttachment = Boolean(body.attachment || (body as any).attachment_name);
+    const attachment = hasAttachment ? {
+      name: body.attachment?.name || (body as any).attachment_name || '',
+      type: body.attachment?.type || (body as any).attachment_type || '',
+      size: body.attachment?.size || (body as any).attachment_size || 0,
+      data: body.attachment?.data || (body as any).attachment_data || '',
+    } : undefined;
+
+    const attachmentName = attachment ? String(attachment.name || '').slice(0, 200) : '';
+    const attachmentType = attachment ? String(attachment.type || '').slice(0, 100) : '';
+    const attachmentSize = attachment ? Number(attachment.size || 0) : 0;
+    const attachmentData = attachment ? String(attachment.data || '') : '';
+
+    if (attachmentSize > 5 * 1024 * 1024) {
+      return error('Attachment must be under 5MB', 400);
+    }
+
+    await env.SUNDB.prepare(
+      'INSERT INTO inquiries (name, email, subject, message, attachment_name, attachment_type, attachment_size, attachment_data, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    )
+      .bind(
+        name,
+        email,
+        subject,
+        message,
+        attachmentName,
+        attachmentType,
+        attachmentSize,
+        attachmentData,
+        'unread'
+      )
+      .run();
+
+    const recipientEmail = 'surajdhere8300@gmail.com';
+    const emailPromises: Promise<any>[] = [];
+
+    if ((env as any).RESEND_API_KEY) {
+      const resendAttachments = attachmentData && attachmentName ? [{
+        filename: attachmentName,
+        content: attachmentData.includes(',') ? attachmentData.split(',')[1] : attachmentData,
+      }] : undefined;
+
+      emailPromises.push(
+        fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${(env as any).RESEND_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            from: 'portfolio@shinelikesun.workers.dev',
+            to: [recipientEmail],
+            reply_to: email,
+            subject: subject ? `[Project Sun] ${subject} from ${name}` : `New message from ${name} on Project Sun`,
+            text: `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}\n\nAttachment: ${attachmentName || 'None'}`,
+            attachments: resendAttachments,
+          }),
+        }).catch((err) => console.error('Resend dispatch error:', err))
+      );
+    }
+
+    if ((env as any).WEB3FORMS_KEY) {
+      emailPromises.push(
+        fetch('https://api.web3forms.com/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            access_key: (env as any).WEB3FORMS_KEY,
+            name,
+            email,
+            subject: subject || `New message from ${name} on Project Sun`,
+            message,
+          }),
+        }).catch((err) => console.error('Web3Forms dispatch error:', err))
+      );
+    }
+
+    if (emailPromises.length > 0) {
+      await Promise.allSettled(emailPromises);
+    }
+
+    return json({
+      success: true,
+      message: 'Thank you! Your message has been sent successfully.',
+    });
+  } catch (e: any) {
+    return error(e.message);
+  }
+}
+
+export async function getInquiries(request: Request, env: Env): Promise<Response> {
+  if (!checkAuth(request, env)) return error('Unauthorized', 401);
+  try {
+    const { results } = await env.SUNDB.prepare(
+      'SELECT id, name, email, subject, message, attachment_name, attachment_type, attachment_size, attachment_data, status, created_at FROM inquiries ORDER BY id DESC'
+    ).all();
+    return json(results);
+  } catch (e: any) {
+    return error(e.message);
+  }
+}
+
+export async function deleteInquiry(env: Env, id: string, request: Request): Promise<Response> {
+  if (!checkAuth(request, env)) return error('Unauthorized', 401);
+  try {
+    await env.SUNDB.prepare('DELETE FROM inquiries WHERE id=?').bind(id).run();
+    return json({ success: true });
+  } catch (e: any) {
+    return error(e.message);
+  }
+}
+
 

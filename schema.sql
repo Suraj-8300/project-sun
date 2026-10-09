@@ -93,3 +93,20 @@ INSERT INTO site_settings (setting_key, setting_value) VALUES
   ('curiosities', 'Machine learning, Cloud architecture, Useful interfaces'),
   ('contact_email', 'surajdhere8300@gmail.com'),
   ('contact_coordinate', '21.1458° N / 79.0882° E');
+
+-- Inquiries / Contact Messages Table
+DROP TABLE IF EXISTS inquiries;
+CREATE TABLE inquiries (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  email TEXT NOT NULL,
+  subject TEXT DEFAULT '',
+  message TEXT NOT NULL,
+  attachment_name TEXT DEFAULT '',
+  attachment_type TEXT DEFAULT '',
+  attachment_size INTEGER DEFAULT 0,
+  attachment_data TEXT DEFAULT '',
+  status TEXT DEFAULT 'unread',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+

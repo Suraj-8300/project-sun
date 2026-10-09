@@ -8,6 +8,7 @@ import {
   getLinks, createLink, updateLink, deleteLink,
   getSiteSettings, updateSiteSettings,
   getAdminStats,
+  submitContactMessage, getInquiries, deleteInquiry,
 } from './api';
 
 const PAGE_ROUTES: Record<string, string> = {
@@ -91,6 +92,18 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
   if (linkId) {
     if (method === 'PUT') return updateLink(request, env, linkId);
     if (method === 'DELETE') return deleteLink(env, linkId, request);
+  }
+
+  // --- INQUIRIES / CONTACT ---
+  if (pathname === '/api/contact' && method === 'POST') {
+    return submitContactMessage(request, env);
+  }
+  if (pathname === '/api/inquiries' && method === 'GET') {
+    return getInquiries(request, env);
+  }
+  const inquiryId = extractId(pathname, '/api/inquiries');
+  if (inquiryId) {
+    if (method === 'DELETE') return deleteInquiry(env, inquiryId, request);
   }
 
   // --- HTML PAGE ROUTING ---
