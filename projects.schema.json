@@ -1,0 +1,59 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ProjectSunModularProjectsConfig",
+  "description": "Configuration schema for Project Sun modular project showcase synchronization",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Schema reference"
+    },
+    "projects": {
+      "type": "array",
+      "description": "List of registered showcase projects",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Display name of the project"
+          },
+          "slug": {
+            "type": "string",
+            "description": "Unique URL-friendly slug (e.g., vneuron, codeaudit)"
+          },
+          "sourceDir": {
+            "type": "string",
+            "description": "Path to source static assets directory relative to project root"
+          },
+          "template": {
+            "type": "string",
+            "description": "Path to source HTML template file relative to project root"
+          },
+          "targetDir": {
+            "type": "string",
+            "description": "Destination directory inside public/ (e.g., ./public/projects/vneuron)"
+          },
+          "apiBaseUrl": {
+            "type": "string",
+            "description": "Remote backend API URL to inject at runtime"
+          },
+          "previewImage": {
+            "type": "string",
+            "description": "Path to project preview screenshot asset"
+          },
+          "githubUrl": {
+            "type": "string",
+            "description": "GitHub repository URL for the project"
+          },
+          "liveUrl": {
+            "type": "string",
+            "description": "Direct live link or relative portfolio demo route"
+          }
+        },
+        "required": ["name", "slug", "targetDir"]
+      }
+    }
+  },
+  "required": ["projects"]
+}
