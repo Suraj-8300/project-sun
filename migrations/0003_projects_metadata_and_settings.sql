@@ -15,7 +15,7 @@ UPDATE projects SET
   summary = 'A multimodal routing console for Nagpur, bringing roads, metro, and walking legs into one journey.',
   image_url = '/projects/vneuron/preview.webp',
   action_label = 'Explore the live map',
-  action_url = '/vneuron'
+  action_url = '/projects/vneuron'
 WHERE name = 'V-NEURON';
 
 UPDATE projects SET 

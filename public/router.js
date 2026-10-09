@@ -1087,7 +1087,7 @@ function renderProjectsTab(pane, items) {
       <input type="text" id="proj-action-label" placeholder="e.g. Explore the live map, Visit live site, View on GitHub" />
 
       <label>Primary Action URL</label>
-      <input type="text" id="proj-action-url" placeholder="e.g. /vneuron or https://..." />
+      <input type="text" id="proj-action-url" placeholder="e.g. /projects/vneuron or https://..." />
 
       <label>Repository / Secondary Live URL</label>
       <input type="url" id="proj-url" placeholder="https://github.com/..." />

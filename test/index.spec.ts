@@ -9,6 +9,7 @@ const publicPages = [
 	["/personal", "Personal — Suraj"],
 	["/instagram", "Instagram — Suraj"],
 	["/vneuron", "V-NEURON - Multimodal Routing Console"],
+	["/projects/vneuron", "V-NEURON - Multimodal Routing Console"],
 ];
 
 describe("public page routes", () => {
