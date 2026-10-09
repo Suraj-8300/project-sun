@@ -139,7 +139,7 @@
               <h2 id="contact-title">Have a good<br />problem in mind?</h2>
               <p>Let’s make something useful out of it.</p>
             </div>
-            <button type="button" class="contact-button" id="start-conversation-btn">Start a conversation <span aria-hidden="true">↗</span></button>
+            <button type="button" class="contact-button" id="start-conversation-btn" data-action="start-conversation" onclick="window.openConversationModal && window.openConversationModal()">Start a conversation <span aria-hidden="true">↗</span></button>
           </div>
           <div class="socials-grid contact-links" id="socials-list" aria-label="Contact and social links"></div>
         </section>
@@ -155,6 +155,62 @@
       </footer>
     </div>
 
-    <script src="/router.js"></script>
+    <!-- Start a Conversation Modal Dialog -->
+    <div class="conversation-modal" id="conversation-modal" aria-hidden="true">
+      <div class="conversation-overlay" id="conv-overlay" onclick="window.closeConversationModal && window.closeConversationModal()"></div>
+      <div class="conversation-window" role="dialog" aria-modal="true" aria-labelledby="conv-title">
+        <div class="conversation-header">
+          <div class="conversation-header-info">
+            <span class="conversation-tag">DIRECT INBOX</span>
+            <h3 id="conv-title" class="conversation-title">Start a Conversation</h3>
+            <p class="conversation-subtitle">Send a message and attachment directly from the site. Suraj will receive it on his Gmail.</p>
+          </div>
+          <button type="button" class="conversation-close-btn" id="conv-close-btn" aria-label="Close conversation modal" onclick="window.closeConversationModal && window.closeConversationModal()">✕</button>
+        </div>
+
+        <form id="conversation-form" class="conversation-form">
+          <div class="conversation-field">
+            <label for="conv-name">Your Name *</label>
+            <input type="text" id="conv-name" required placeholder="e.g. Alex Sharma" maxlength="100" />
+          </div>
+
+          <div class="conversation-field">
+            <label for="conv-email">Your Email *</label>
+            <input type="email" id="conv-email" required placeholder="e.g. alex@example.com" maxlength="120" />
+          </div>
+
+          <div class="conversation-field">
+            <label for="conv-subject">Subject (Optional)</label>
+            <input type="text" id="conv-subject" placeholder="e.g. Collaboration / Project Inquiry" maxlength="150" />
+          </div>
+
+          <div class="conversation-field">
+            <label for="conv-message">Message *</label>
+            <textarea id="conv-message" required rows="4" placeholder="Tell me about your project, problem, idea, or question..." maxlength="5000"></textarea>
+          </div>
+
+          <div class="conversation-field">
+            <label>Attachment (Optional, max 5MB)</label>
+            <div class="conversation-file-drop" id="conv-dropzone">
+              <input type="file" id="conv-file-input" class="conversation-file-input" accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx,.txt,.zip" />
+              <label for="conv-file-input" class="conversation-file-label">
+                <span><strong>Choose a file</strong> or drag &amp; drop here</span>
+                <span>PDF, Images, DOC, TXT, or ZIP up to 5MB</span>
+              </label>
+              <div id="conv-file-chip-container" style="display:none;"></div>
+            </div>
+          </div>
+
+          <div id="conv-status" class="conversation-status"></div>
+
+          <div class="conversation-actions">
+            <button type="button" class="conversation-cancel-btn" id="conv-cancel-btn" onclick="window.closeConversationModal && window.closeConversationModal()">Cancel</button>
+            <button type="submit" class="conversation-submit-btn" id="conv-submit-btn">Send Message <span aria-hidden="true">↗</span></button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script src="/router.js?v=20261010-3"></script>
   </body>
 </html>

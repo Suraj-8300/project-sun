@@ -373,8 +373,33 @@ export async function getAdminStats(request: Request, env: Env): Promise<Respons
 
 // --- Inquiries / Contact Messages ---
 
+// Helper to ensure inquiries table exists even if remote D1 migration wasn't manually executed
+async function ensureInquiriesTable(env: Env): Promise<void> {
+  try {
+    await env.SUNDB.prepare(`
+      CREATE TABLE IF NOT EXISTS inquiries (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        email TEXT NOT NULL,
+        subject TEXT,
+        message TEXT NOT NULL,
+        attachment_name TEXT,
+        attachment_type TEXT,
+        attachment_size INTEGER,
+        attachment_data TEXT,
+        status TEXT DEFAULT 'unread',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `).run();
+  } catch (e) {
+    console.warn('ensureInquiriesTable warning:', e);
+  }
+}
+
 export async function submitContactMessage(request: Request, env: Env): Promise<Response> {
   try {
+    await ensureInquiriesTable(env);
+
     const body = (await request.json()) as {
       name?: string;
       email?: string;
@@ -463,9 +488,7 @@ export async function submitContactMessage(request: Request, env: Env): Promise<
           }),
         }).catch((err) => console.error('Resend dispatch error:', err))
       );
-    }
-
-    if ((env as any).WEB3FORMS_KEY) {
+    } else if ((env as any).WEB3FORMS_KEY) {
       emailPromises.push(
         fetch('https://api.web3forms.com/submit', {
           method: 'POST',
@@ -478,6 +501,24 @@ export async function submitContactMessage(request: Request, env: Env): Promise<
             message,
           }),
         }).catch((err) => console.error('Web3Forms dispatch error:', err))
+      );
+    } else {
+      // Zero-config email forward to Gmail via FormSubmit
+      emailPromises.push(
+        fetch(`https://formsubmit.co/ajax/${recipientEmail}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          body: JSON.stringify({
+            _subject: subject ? `[Project Sun] ${subject} from ${name}` : `New message from ${name} on Project Sun`,
+            name,
+            email,
+            message,
+            attachment: attachmentName ? `${attachmentName} (${(attachmentSize / 1024).toFixed(1)} KB)` : 'None',
+          }),
+        }).catch((err) => console.error('FormSubmit dispatch error:', err))
       );
     }
 
@@ -497,6 +538,7 @@ export async function submitContactMessage(request: Request, env: Env): Promise<
 export async function getInquiries(request: Request, env: Env): Promise<Response> {
   if (!checkAuth(request, env)) return error('Unauthorized', 401);
   try {
+    await ensureInquiriesTable(env);
     const { results } = await env.SUNDB.prepare(
       'SELECT id, name, email, subject, message, attachment_name, attachment_type, attachment_size, attachment_data, status, created_at FROM inquiries ORDER BY id DESC'
     ).all();

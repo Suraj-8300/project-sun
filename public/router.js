@@ -236,6 +236,26 @@ function initConversationTrigger() {
   });
 }
 
+// Global delegated click listener for conversation button and contact links
+document.addEventListener('click', (e) => {
+  const convBtn = e.target.closest('#start-conversation-btn, [data-action="start-conversation"]');
+  if (convBtn) {
+    e.preventDefault();
+    openConversationModal();
+    return;
+  }
+
+  const contactLink = e.target.closest('a[href="#contact"]');
+  if (contactLink) {
+    const contactSection = document.getElementById('contact');
+    if (contactSection) {
+      e.preventDefault();
+      contactSection.scrollIntoView({ behavior: 'smooth' });
+      history.pushState(null, '', '#contact');
+    }
+  }
+});
+
 async function loadProfileSettings() {
   try {
     const response = await fetch('/api/settings');
@@ -964,13 +984,12 @@ let selectedAttachment = null;
 
 function initConversationModal() {
   let modal = document.getElementById('conversation-modal');
-  if (modal) return modal;
-
-  modal = document.createElement('div');
-  modal.id = 'conversation-modal';
-  modal.className = 'conversation-modal';
-  modal.setAttribute('aria-hidden', 'true');
-  modal.innerHTML = `
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'conversation-modal';
+    modal.className = 'conversation-modal';
+    modal.setAttribute('aria-hidden', 'true');
+    modal.innerHTML = `
     <div class="conversation-overlay" id="conv-overlay"></div>
     <div class="conversation-window" role="dialog" aria-modal="true" aria-labelledby="conv-title">
       <div class="conversation-header">
@@ -1024,8 +1043,11 @@ function initConversationModal() {
       </form>
     </div>
   `;
+    document.body.appendChild(modal);
+  }
 
-  document.body.appendChild(modal);
+  if (modal.dataset.bound === 'true') return modal;
+  modal.dataset.bound = 'true';
 
   const closeBtn = modal.querySelector('#conv-close-btn');
   const cancelBtn = modal.querySelector('#conv-cancel-btn');
@@ -1164,6 +1186,8 @@ function closeConversationModal() {
   modal.setAttribute('aria-hidden', 'true');
   document.body.style.overflow = '';
 }
+window.openConversationModal = openConversationModal;
+window.closeConversationModal = closeConversationModal;
 
 function showConvStatus(msg, type) {
   const status = document.getElementById('conv-status');
@@ -2169,20 +2193,26 @@ function checkUrlForAdmin() {
 }
 
 // DOM Setup
-window.addEventListener('DOMContentLoaded', () => {
+function bootApp() {
   setupAdminTrigger();
   if (localStorage.getItem('admin_token')) {
     initAdminPanel();
   }
 
   const path = window.location.pathname;
-  const initFunc = routes[path];
+  const initFunc = routes[path] || (path === '/index.html' ? initLandingPage : null) || routes['/'];
   if (initFunc) {
     initFunc();
   }
 
   checkUrlForAdmin();
-});
+}
+
+if (document.readyState === 'loading') {
+  window.addEventListener('DOMContentLoaded', bootApp);
+} else {
+  bootApp();
+}
 
 // --- Interactive Electric Spark Mouse Trail ---
 (() => {
